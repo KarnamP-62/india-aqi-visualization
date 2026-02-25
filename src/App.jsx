@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import * as d3 from "d3";
 import "./App.css";
 import { CircularVizMap, LifeExpectancyPlot } from "./components/map/StateAQIMap";
@@ -26,6 +26,11 @@ export default function App() {
   const [sourceTooltipPos, setSourceTooltipPos] = useState({ x: 0, y: 0 }); // position for source tooltip
   const [lifeExpData, setLifeExpData] = useState([]); // life expectancy data for visualization
   const [showCircularHelp, setShowCircularHelp] = useState(null); // which help tooltip to show
+  const [hoveredStateIndex, setHoveredStateIndex] = useState(null); // index of hovered state in grid
+  const [gridTooltipPos, setGridTooltipPos] = useState({ x: 0, y: 0 }); // position for grid tooltip
+  const [sortOrder, setSortOrder] = useState("alphabetical"); // "alphabetical", "highToLow", "lowToHigh"
+  const [viewMode, setViewMode] = useState("overview"); // "overview" or "scrollable"
+  const indiaMapRef = useRef(null); // ref for India map SVG object
   const introRef = useRef(null);
   const imagesSectionRef = useRef(null);
   const timelineRef = useRef(null);
@@ -37,6 +42,8 @@ export default function App() {
   const weatherText2Ref = useRef(null);
   const pollutantRefs = useRef([]);
   const sourcesScrollRef = useRef(null);
+  const gridSectionRef = useRef(null); // ref for grid of circular visualizations
+  const mainVisualizationRef = useRef(null); // ref for main visualization section
 
   // Sources of pollution data
   const pollutionSources = [
@@ -163,13 +170,31 @@ export default function App() {
           stateMap.get(state).areaData.get(area).get(monthKey).set(dayNum, { status, aqiValue, pollutants });
         });
 
-        // Convert to array format
+        // Convert to array format with pre-calculated avgAQI
         const processedData = Array.from(stateMap.entries())
-          .map(([state, stateInfo]) => ({
-            state,
-            areas: Array.from(stateInfo.areas).sort(),
-            areaData: stateInfo.areaData,
-          }))
+          .map(([state, stateInfo]) => {
+            // Calculate average AQI for sorting
+            const aqiValues = [];
+            stateInfo.areaData.forEach((areaMonths) => {
+              areaMonths.forEach((days) => {
+                days.forEach((dayData) => {
+                  if (dayData.aqiValue && !isNaN(dayData.aqiValue)) {
+                    aqiValues.push(dayData.aqiValue);
+                  }
+                });
+              });
+            });
+            const avgAQI = aqiValues.length > 0
+              ? Math.round(aqiValues.reduce((a, b) => a + b, 0) / aqiValues.length)
+              : 0;
+
+            return {
+              state,
+              areas: Array.from(stateInfo.areas).sort(),
+              areaData: stateInfo.areaData,
+              avgAQI,
+            };
+          })
           .sort((a, b) => a.state.localeCompare(b.state));
 
         console.log("States processed:", processedData.length);
@@ -218,7 +243,7 @@ export default function App() {
       },
       {
         root: null,
-        rootMargin: "-40% 0px -40% 0px",
+        rootMargin: "-200px 0px -40% 0px",
         threshold: 0,
       }
     );
@@ -228,7 +253,7 @@ export default function App() {
     });
 
     return () => observer.disconnect();
-  }, [stateData]);
+  }, [stateData, viewMode]);
 
   // Observer for image expansion animation
   useEffect(() => {
@@ -438,6 +463,103 @@ export default function App() {
     return () => window.removeEventListener("scroll", handleSourcesScroll);
   }, []);
 
+  // Update India map SVG when hovered state changes or active state changes in scrollable mode
+  useEffect(() => {
+    if (!indiaMapRef.current) return;
+
+    const svgDoc = indiaMapRef.current.contentDocument;
+    if (!svgDoc) return;
+
+    // Small UTs that need extra visibility markers
+    const smallUTs = [
+      "Delhi", "Chandigarh", "Puducherry", "Goa",
+      "Daman and Diu", "Dadra and Nagar Haveli",
+      "Lakshadweep", "Andaman and Nicobar Islands"
+    ];
+
+    // Remove any existing markers first
+    const existingMarkers = svgDoc.querySelectorAll(".ut-marker");
+    existingMarkers.forEach(marker => marker.remove());
+
+    // Determine which state to highlight based on view mode
+    const highlightIndex = viewMode === "scrollable" ? activeStateIndex : hoveredStateIndex;
+
+    const paths = svgDoc.querySelectorAll("path");
+    paths.forEach((path) => {
+      const stateName = path.getAttribute("name");
+      const isHovered = highlightIndex !== null &&
+        stateData[highlightIndex] &&
+        stateData[highlightIndex].state === stateName;
+
+      path.style.fill = isHovered ? "#5699af" : "#e0e0e0";
+      path.style.stroke = isHovered ? "#2d6a7a" : "#999";
+      path.style.strokeWidth = isHovered ? "1" : "0.3";
+      path.style.opacity = isHovered ? "1" : "0.6";
+      path.style.transition = "fill 0.2s, opacity 0.2s";
+
+      // Add extra marker for small UTs when hovered
+      if (isHovered && smallUTs.includes(stateName)) {
+        const bbox = path.getBBox();
+        const centerX = bbox.x + bbox.width / 2;
+        const centerY = bbox.y + bbox.height / 2;
+
+        // Create outer pulsing circle
+        const outerCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        outerCircle.setAttribute("cx", centerX);
+        outerCircle.setAttribute("cy", centerY);
+        outerCircle.setAttribute("r", "12");
+        outerCircle.setAttribute("fill", "none");
+        outerCircle.setAttribute("stroke", "#5699af");
+        outerCircle.setAttribute("stroke-width", "2");
+        outerCircle.setAttribute("class", "ut-marker");
+        outerCircle.style.animation = "pulse 1s infinite";
+
+        // Create inner filled circle
+        const innerCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        innerCircle.setAttribute("cx", centerX);
+        innerCircle.setAttribute("cy", centerY);
+        innerCircle.setAttribute("r", "6");
+        innerCircle.setAttribute("fill", "#5699af");
+        innerCircle.setAttribute("class", "ut-marker");
+
+        // Add animation style if not exists
+        let style = svgDoc.querySelector("style.ut-style");
+        if (!style) {
+          style = document.createElementNS("http://www.w3.org/2000/svg", "style");
+          style.setAttribute("class", "ut-style");
+          style.textContent = `
+            @keyframes pulse {
+              0% { r: 12; opacity: 1; }
+              50% { r: 18; opacity: 0.5; }
+              100% { r: 12; opacity: 1; }
+            }
+          `;
+          svgDoc.documentElement.appendChild(style);
+        }
+
+        svgDoc.documentElement.appendChild(outerCircle);
+        svgDoc.documentElement.appendChild(innerCircle);
+      }
+    });
+  }, [hoveredStateIndex, activeStateIndex, viewMode, stateData]);
+
+  // Sorted state data based on sortOrder
+  const sortedStateData = useMemo(() => {
+    if (!stateData || stateData.length === 0) return [];
+
+    const dataCopy = [...stateData];
+
+    switch (sortOrder) {
+      case "highToLow":
+        return dataCopy.sort((a, b) => (b.avgAQI || 0) - (a.avgAQI || 0));
+      case "lowToHigh":
+        return dataCopy.sort((a, b) => (a.avgAQI || 0) - (b.avgAQI || 0));
+      case "alphabetical":
+      default:
+        return dataCopy.sort((a, b) => a.state.localeCompare(b.state));
+    }
+  }, [stateData, sortOrder]);
+
   const getStatusColor = (status) => {
     const statusLower = status.toLowerCase();
     if (statusLower.includes("good")) return "#5699af"; // Good - blue
@@ -450,6 +572,40 @@ export default function App() {
     return "#cccccc";
   };
 
+  // Get AQI category and health impact based on AQI value
+  const getAQICategoryInfo = (aqi) => {
+    if (aqi <= 50) return {
+      category: "Good",
+      color: "#5699af",
+      health: "Minimal impact on health. Air quality is considered satisfactory."
+    };
+    if (aqi <= 100) return {
+      category: "Satisfactory",
+      color: "#87beb1",
+      health: "Minor breathing discomfort to sensitive people."
+    };
+    if (aqi <= 200) return {
+      category: "Moderate",
+      color: "#dfbfc6",
+      health: "Breathing discomfort to people with lung, heart disease, children and older adults."
+    };
+    if (aqi <= 300) return {
+      category: "Poor",
+      color: "#de9eaf",
+      health: "Breathing discomfort to most people on prolonged exposure."
+    };
+    if (aqi <= 400) return {
+      category: "Very Poor",
+      color: "#e07192",
+      health: "Respiratory illness on prolonged exposure. Effect on healthy people too."
+    };
+    return {
+      category: "Severe",
+      color: "#c1616b",
+      health: "Serious health impacts. Affects healthy people and seriously impacts those with existing diseases."
+    };
+  };
+
   const monthNames = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
@@ -457,7 +613,7 @@ export default function App() {
 
   const daysInMonth = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]; // 2024 is a leap year
 
-  const renderCircularVisualization = (stateInfo) => {
+  const renderCircularVisualization = (stateInfo, disableTooltips = false) => {
     if (!stateInfo) return null;
 
     const centerX = 400;
@@ -544,7 +700,7 @@ export default function App() {
           r={60}
           fill={`url(#centerGlow-${stateInfo.state.replace(/\s+/g, '-')})`}
         >
-          <title>{`${stateInfo.state} - Average AQI: ${avgAQI.toFixed(1)}`}</title>
+          {!disableTooltips && <title>{`${stateInfo.state} - Average AQI: ${avgAQI.toFixed(1)}`}</title>}
         </circle>
 
         {(() => {
@@ -572,8 +728,8 @@ export default function App() {
                 strokeWidth="1"
                 strokeDasharray="4,4"
                 opacity="0.4"
-                style={{ cursor: "pointer" }}
-                onMouseEnter={(e) => {
+                style={{ cursor: disableTooltips ? "default" : "pointer" }}
+                onMouseEnter={disableTooltips ? undefined : (e) => {
                   setTooltip({
                     x: e.clientX,
                     y: e.clientY,
@@ -585,12 +741,12 @@ export default function App() {
                     color: threshold.color,
                   });
                 }}
-                onMouseMove={(e) => {
+                onMouseMove={disableTooltips ? undefined : (e) => {
                   if (tooltip) {
                     setTooltip({ ...tooltip, x: e.clientX, y: e.clientY });
                   }
                 }}
-                onMouseLeave={() => setTooltip(null)}
+                onMouseLeave={disableTooltips ? undefined : () => setTooltip(null)}
               />
             );
           });
@@ -614,8 +770,8 @@ export default function App() {
               stroke={color}
               strokeWidth={dashWidth}
               opacity={0.7}
-              style={{ cursor: "pointer" }}
-              onMouseEnter={(e) => {
+              style={{ cursor: disableTooltips ? "default" : "pointer" }}
+              onMouseEnter={disableTooltips ? undefined : (e) => {
                 if (dayInfo.status) {
                   setTooltip({
                     x: e.clientX,
@@ -629,12 +785,12 @@ export default function App() {
                   });
                 }
               }}
-              onMouseMove={(e) => {
+              onMouseMove={disableTooltips ? undefined : (e) => {
                 if (tooltip) {
                   setTooltip({ ...tooltip, x: e.clientX, y: e.clientY });
                 }
               }}
-              onMouseLeave={() => setTooltip(null)}
+              onMouseLeave={disableTooltips ? undefined : () => setTooltip(null)}
             />
           );
         })}
@@ -1038,72 +1194,99 @@ export default function App() {
           <div
             style={{
               height: "100vh",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-              textAlign: "center",
+              position: "relative",
             }}
           >
-            <h1
+            {/* SVG background */}
+            <img
+              src="/AQIintro.svg"
+              alt="AQI Introduction Visualization"
               style={{
-                fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                fontSize: "72px",
-                fontWeight: "400",
-                color: "#000",
-                margin: "0",
-                letterSpacing: "1px",
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                zIndex: 0,
+              }}
+            />
+            {/* Text content on top - left aligned */}
+            <div
+              style={{
+                position: "relative",
+                zIndex: 1,
+                padding: "60px 160px",
+                textAlign: "left",
               }}
             >
-              India Ki Hawa
-            </h1>
-            <p
-              style={{
-                fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                fontSize: "36px",
-                fontWeight: "400",
-                color: "#000",
-                margin: "20px 0 50px 0",
-              }}
-            >
-              The air we breathe
-            </p>
-            <p
-              style={{
-                fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                fontSize: "24px",
-                fontWeight: "400",
-                color: "#000",
-                margin: "0 0 80px 0",
-                maxWidth: "600px",
-                lineHeight: "2.0",
-              }}
-            >
-              Visualizing Spatial, Temporal, and Systemic<br />
-              Dimensions of India's Air Pollution
-            </p>
-            <p
-              style={{
-                fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                fontSize: "16px",
-                fontWeight: "400",
-                color: "#000",
-                margin: "0",
-              }}
-            >
-              Priyanka Karnam
-            </p>
-            <p
-              style={{
-                fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                fontSize: "14px",
-                fontWeight: "400",
-                color: "#666",
-                margin: "8px 0 0 0",
-              }}
-            >
-              Feb 9, 2026
-            </p>
+              <h1
+                style={{
+                  fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                  fontSize: "64px",
+                  fontWeight: "900",
+                  color: "#000",
+                  margin: "0",
+                }}
+              >
+                India Ki Hawa
+              </h1>
+              <p
+                style={{
+                  fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                  fontSize: "36px",
+                  fontWeight: "400",
+                  color: "#000",
+                  margin: "10px 0 15px 0",
+                }}
+              >
+                The air we breathe
+              </p>
+              <div
+                style={{
+                  width: "400px",
+                  height: "2px",
+                  backgroundColor: "#000",
+                  margin: "0 0 30px 0",
+                }}
+              />
+              <p
+                style={{
+                  fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                  fontSize: "24px",
+                  fontWeight: "400",
+                  fontStyle: "italic",
+                  color: "#000",
+                  margin: "0 0 40px 0",
+                  maxWidth: "400px",
+                  lineHeight: "1.5",
+                }}
+              >
+                Visualizing Spatial, Temporal, and Systemic Dimensions of India's Air Pollution.
+              </p>
+              <p
+                style={{
+                  fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                  fontSize: "16px",
+                  fontWeight: "400",
+                  color: "#000",
+                  margin: "0",
+                }}
+              >
+                Priyanka Karnam
+              </p>
+              <p
+                style={{
+                  fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                  fontSize: "16px",
+                  fontWeight: "400",
+                  color: "#000",
+                  margin: "5px 0 0 0",
+                }}
+              >
+                Feb 09, 2026
+              </p>
+            </div>
           </div>
 
           {/* Introduction text section */}
@@ -1118,7 +1301,7 @@ export default function App() {
               maxWidth: "800px",
               lineHeight: "2.0",
               textAlign: "left",
-              padding: "60px 40px",
+              padding: "140px 40px",
             }}
           >
             <p>
@@ -1130,176 +1313,6 @@ export default function App() {
             <p style={{ marginTop: "10px" }}>
               Home to one of the world's largest and densest populations, India faces unique pressures. Rising energy demand, expanding transportation systems, and accelerating urban growth have intensified emissions, while the increasing number of vehicles has made pollution control even more challenging. These pressures are compounded by slow transitions to clean energy, uneven infrastructure development, and weak enforcement of environmental regulations. This story examines how air pollution in India varies across space and time, and what these patterns reveal about public health, environmental inequality, and the systems that shape the air millions inhale daily.
             </p>
-          </div>
-
-          {/* Delhi & Six Cities Scrollytelling Section */}
-          <div
-            ref={mapScrollRef}
-            style={{
-              display: "flex",
-              minHeight: "200vh",
-              padding: "0 40px",
-              maxWidth: "1400px",
-              margin: "0 auto",
-              marginTop: "150px",
-            }}
-          >
-            {/* Left column - Sticky map that transitions */}
-            <div
-              style={{
-                flex: "6",
-                position: "sticky",
-                top: "10vh",
-                height: "80vh",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "flex-start",
-                marginLeft: "-40px",
-              }}
-            >
-              {/* Delhi map */}
-              <img
-                src="/delhi_1.svg"
-                alt="India map highlighting Delhi"
-                style={{
-                  position: "absolute",
-                  width: "100%",
-                  maxWidth: "800px",
-                  height: "auto",
-                  display: activeMapIndex === 0 ? "block" : "none",
-                }}
-              />
-              {/* Six Cities map */}
-              <img
-                src="/six_cities.svg"
-                alt="India map highlighting six most polluted cities"
-                style={{
-                  position: "absolute",
-                  width: "100%",
-                  maxWidth: "800px",
-                  height: "auto",
-                  display: activeMapIndex === 1 ? "block" : "none",
-                }}
-              />
-            </div>
-
-            {/* Right column - Scrollable text sections */}
-            <div
-              style={{
-                flex: "4",
-                display: "flex",
-                flexDirection: "column",
-                paddingLeft: "40px",
-              }}
-            >
-              {/* Delhi text section */}
-              <div
-                ref={delhiTextRef}
-                data-mapindex="0"
-                style={{
-                  minHeight: "100vh",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  paddingTop: "20vh",
-                  paddingBottom: "20vh",
-                  opacity: activeMapIndex === 0 ? 1 : 0.3,
-                  transition: "opacity 0.4s ease-out",
-                }}
-              >
-                <h2
-                  style={{
-                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                    fontSize: "48px",
-                    fontWeight: "700",
-                    color: "#3a9bb2",
-                    margin: "0 0 20px 0",
-                    letterSpacing: "2px",
-                    paddingLeft: 50,
-                    textAlign: "left",
-                  }}
-                >
-                  DELHI
-                </h2>
-                <p
-                  style={{
-                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                    fontSize: "16px",
-                    fontWeight: "400",
-                    color: "#333",
-                    lineHeight: "2.0",
-                    margin: "0",
-                    paddingLeft: 50,
-                    maxWidth: "400px",
-                    textAlign: "left",
-                  }}
-                >
-                has the poorest air quality among capital cities globally, with concentrations of particulate matter (PM2.5) nearly 10 times higher than the World Health Organization guidelines.
-                </p>
-              </div>
-
-              {/* Six Cities text section */}
-              <div
-                ref={sixCitiesTextRef}
-                data-mapindex="1"
-                style={{
-                  minHeight: "100vh",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  paddingTop: "20vh",
-                  paddingBottom: "20vh",
-                  opacity: activeMapIndex === 1 ? 1 : 0.3,
-                  transition: "opacity 0.4s ease-out",
-                }}
-              >
-                <h2
-                  style={{
-                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                    fontSize: "72px",
-                    fontWeight: "700",
-                    margin: "0 0 20px 0",
-                    paddingLeft: 50,
-                    textAlign: "left",
-                    lineHeight: "1.1",
-                  }}
-                >
-                  <span style={{ color: "#3a9bb2" }}>6</span>
-                  <span style={{ color: "#444" }}> out of 10</span>
-                </h2>
-                <p
-                  style={{
-                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                    fontSize: "16px",
-                    fontWeight: "400",
-                    color: "#555",
-                    lineHeight: "2.0",
-                    margin: "0",
-                    paddingLeft: 50,
-                    maxWidth: "400px",
-                    textAlign: "left",
-                  }}
-                >
-                  most polluted cities of 2024 in the world are in India.
-                </p>
-                <p
-                  style={{
-                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                    fontSize: "12px",
-                    fontWeight: "400",
-                    color: "#888",
-                    lineHeight: "1.5",
-                    margin: "20px 0 0 0",
-                    paddingLeft: 50,
-                    maxWidth: "400px",
-                    textAlign: "left",
-                  }}
-                >
-                  Source: <a href="https://www.iqair.com/world-most-polluted-cities" target="_blank" rel="noopener noreferrer" style={{ color: "#5699af" }}>IQAir - World Most Polluted Cities</a>
-                </p>
-              </div>
-
-            </div>
           </div>
 
           {/* KPI Sections - 3 columns */}
@@ -1472,102 +1485,6 @@ export default function App() {
               }}
             />
 
-            {/* Image 1 - Left image, Right text */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                marginBottom: "120px",
-              }}
-            >
-              <div style={{ flex: 1, paddingRight: "40px", display: "flex", justifyContent: "flex-end" }}>
-                <img
-                  src="/image1.jpeg.webp"
-                  alt="Image 1"
-                  style={{
-                    width: "100%",
-                    maxWidth: "450px",
-                    height: "auto",
-                    display: "block",
-                  }}
-                />
-              </div>
-              {/* Dot on timeline */}
-              <div
-                style={{
-                  width: "16px",
-                  height: "16px",
-                  backgroundColor: "#5699af",
-                  borderRadius: "50%",
-                  flexShrink: 0,
-                  zIndex: 10,
-                }}
-              />
-              <div style={{ flex: 1, paddingLeft: "40px" }}>
-                <p
-                  style={{
-                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                    fontSize: "16px",
-                    color: "#555",
-                    lineHeight: "2.0",
-                    maxWidth: "400px",
-                    margin: 0,
-                    textAlign: "left",
-                  }}
-                >
-                 Heavy smog seen engulfed amid rise in pollution levels at Barakhamba on Nov. 2, 2023 in New Delhi, India.
-                     </p>
-              </div>
-            </div>
-
-            {/* Image 2 - Right image, Left text */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                marginBottom: "120px",
-              }}
-            >
-              <div style={{ flex: 1, paddingRight: "40px", display: "flex", justifyContent: "flex-end" }}>
-                <p
-                  style={{
-                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                    fontSize: "16px",
-                    color: "#555",
-                    lineHeight: "2.0",
-                    maxWidth: "400px",
-                    margin: 0,
-                    textAlign: "right",
-                  }}
-                >
-                  Indian schoolchildren cover their faces as they walk to school amid heavy smog in New Delhi on November 8, 2017.
-                      </p>
-              </div>
-              {/* Dot on timeline */}
-              <div
-                style={{
-                  width: "16px",
-                  height: "16px",
-                  backgroundColor: "#5699af",
-                  borderRadius: "50%",
-                  flexShrink: 0,
-                  zIndex: 10,
-                }}
-              />
-              <div style={{ flex: 1, paddingLeft: "40px" }}>
-                <img
-                  src="/image2.jpg"
-                  alt="Image 2"
-                  style={{
-                    width: "100%",
-                    maxWidth: "450px",
-                    height: "auto",
-                    display: "block",
-                  }}
-                />
-              </div>
-            </div>
-
             {/* Image 3 - Left image, Right text */}
             <div
               style={{
@@ -1611,7 +1528,7 @@ export default function App() {
                     textAlign: "left",
                   }}
                 >
-                  Smoke billows from burning garbage as a boy salvages items from a landfill site in New Delhi
+                  Smoke rises from burning garbage as a boy searches for recyclable items at a landfill in New Delhi. The burning waste emits toxic pollutants such as dioxins, nitrogen oxides, and particulate matter, posing serious respiratory risks to nearby residents and workers, who often lack adequate protective equipment. These landfill fires significantly worsen local air quality, a problem intensified by high temperatures and inadequate waste management infrastructure.
                       </p>
               </div>
             </div>
@@ -1636,7 +1553,7 @@ export default function App() {
                     textAlign: "right",
                   }}
                 >
-                Burning of rice residues after harvest, to quickly prepare the land for wheat planting, around Sangrur, Punjab, India
+                Burning rice residue (parali) in Sangrur, Punjab, occurs annually in Oct-Nov to quickly and cheaply clear fields for wheat, leaving only 10–15 days for preparation. This practice, covering millions of tons of stubble, causes severe air pollution (PM2.5, CO), health hazards across Northern India, and kills beneficial soil nutrients. 
                     </p>
               </div>
               {/* Dot on timeline */}
@@ -1707,7 +1624,7 @@ export default function App() {
                     textAlign: "left",
                   }}
                 >
-                In the past three decades, Byrnihat has grown from a small town into an industrial hub   </p>
+                Over the past three decades, Byrnihat has transformed from a small settlement into a major industrial hub. This town of roughly 50,000 residents hosts around 80 industries, many centered on iron and steel production. Its winding roads are crowded with long lines of trucks — some idling, others transporting materials to and from factories.Today, it carries the unwanted distinction of being ranked the world’s most polluted city by a Swiss air quality monitoring agency.   </p>
               </div>
             </div>
 
@@ -2377,69 +2294,140 @@ export default function App() {
             </p>
           </div>
 
-          {/* India AQI Circular Visualization Map Section - Scrollytelling */}
+          {/* Delhi & Six Cities Scrollytelling Section */}
           <div
+            ref={mapScrollRef}
             style={{
               display: "flex",
               minHeight: "200vh",
               padding: "0 40px",
               maxWidth: "1400px",
               margin: "0 auto",
+              marginTop: "150px",
             }}
           >
-            {/* Left - Sticky Circular Viz Map (stays for both scroll sections) */}
+            {/* Left column - Sticky map that transitions */}
             <div
               style={{
-                flex: "1.2",
+                flex: "6",
                 position: "sticky",
-                top: "0",
-                height: "100vh",
+                top: "10vh",
+                height: "80vh",
                 display: "flex",
-                justifyContent: "flex-start",
                 alignItems: "center",
-                paddingRight: "40px",
-                marginLeft: "-150px",
+                justifyContent: "flex-start",
+                marginLeft: "-40px",
               }}
             >
-              <div style={{ position: "relative" }}>
-                <CircularVizMap />
-                <div style={{ position: "absolute", top: "80px", left: "180px" }}>
-                  {renderCircularHelpButton("indiaMap")}
-                </div>
-              </div>
+              {/* Delhi map */}
+              <img
+                src="/delhi_1.svg"
+                alt="India map highlighting Delhi"
+                style={{
+                  position: "absolute",
+                  width: "100%",
+                  maxWidth: "800px",
+                  height: "auto",
+                  display: activeMapIndex === 0 ? "block" : "none",
+                }}
+              />
+              {/* Six Cities map */}
+              <img
+                src="/six_cities.svg"
+                alt="India map highlighting six most polluted cities"
+                style={{
+                  position: "absolute",
+                  width: "100%",
+                  maxWidth: "800px",
+                  height: "auto",
+                  display: activeMapIndex === 1 ? "block" : "none",
+                }}
+              />
             </div>
 
-            {/* Right - Two Scrolling Text Sections */}
+            {/* Right column - Scrollable text sections */}
             <div
               style={{
-                flex: "0.4",
+                flex: "4",
                 display: "flex",
                 flexDirection: "column",
-                paddingLeft: "30px",
+                paddingLeft: "40px",
               }}
             >
-              {/* First scroll section - Title and Description */}
+              {/* Delhi text section */}
               <div
+                ref={delhiTextRef}
+                data-mapindex="0"
                 style={{
-                  height: "100vh",
+                  minHeight: "100vh",
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "center",
-                  alignItems: "flex-start",
+                  paddingTop: "20vh",
+                  paddingBottom: "20vh",
+                  opacity: activeMapIndex === 0 ? 1 : 0.3,
+                  transition: "opacity 0.4s ease-out",
                 }}
               >
                 <h2
                   style={{
                     fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                    fontSize: "24px",
-                    fontWeight: "600",
-                    color: "#333",
-                    margin: "0 0 12px 0",
-                    lineHeight: "2.0",
+                    fontSize: "48px",
+                    fontWeight: "700",
+                    color: "#3a9bb2",
+                    margin: "0 0 20px 0",
+                    letterSpacing: "2px",
+                    paddingLeft: 50,
                     textAlign: "left",
                   }}
                 >
-                  AQI Category Distribution by State and Union Territory
+                  DELHI
+                </h2>
+                <p
+                  style={{
+                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                    fontSize: "16px",
+                    fontWeight: "400",
+                    color: "#333",
+                    lineHeight: "2.0",
+                    margin: "0",
+                    paddingLeft: 50,
+                    maxWidth: "400px",
+                    textAlign: "left",
+                  }}
+                >
+                has the poorest air quality among capital cities globally, with concentrations of particulate matter (PM2.5) nearly 10 times higher than the World Health Organization guidelines.
+                </p>
+              </div>
+
+              {/* Six Cities text section */}
+              <div
+                ref={sixCitiesTextRef}
+                data-mapindex="1"
+                style={{
+                  minHeight: "100vh",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  paddingTop: "20vh",
+                  paddingBottom: "20vh",
+                  opacity: activeMapIndex === 1 ? 1 : 0.3,
+                  transition: "opacity 0.4s ease-out",
+                }}
+              >
+                <h2
+                  style={{
+                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                    fontSize: "72px",
+                    fontWeight: "700",
+                    margin: "0 0 20px 0",
+                    paddingLeft: 50,
+                    textAlign: "left",
+                    lineHeight: "1.1",
+                  }}
+                >
+                  <span style={{ color: "#3a9bb2" }}>6</span>
+                  <span style={{ color: "#444" }}> out of 10</span>
                 </h2>
                 <p
                   style={{
@@ -2448,12 +2436,13 @@ export default function App() {
                     fontWeight: "400",
                     color: "#555",
                     lineHeight: "2.0",
-                    margin: "0 0 10px 0",
-                    maxWidth: "350px",
+                    margin: "0",
+                    paddingLeft: 50,
+                    maxWidth: "400px",
                     textAlign: "left",
                   }}
                 >
-                  The map of India on the left illustrates Air Quality Index (AQI) conditions across 2024. Each circular calendar represents a state or union territory, with radial lines showing daily AQI values throughout the year. Colors indicate pollution severity—blue tones for better air quality and pink tones for poorer conditions.
+                  most polluted cities of 2024 in the world are in India.
                 </p>
                 <p
                   style={{
@@ -2463,99 +2452,15 @@ export default function App() {
                     color: "#888",
                     lineHeight: "1.5",
                     margin: "20px 0 0 0",
-                    maxWidth: "350px",
+                    paddingLeft: 50,
+                    maxWidth: "400px",
                     textAlign: "left",
                   }}
                 >
-                  Source: <a href="https://www.kaggle.com/datasets/bhadramohit/india-air-quality-index2024-dataset" target="_blank" rel="noopener noreferrer" style={{ color: "#5699af" }}>Kaggle - India Air Quality Index 2024 Dataset</a>
+                  Source: <a href="https://www.iqair.com/world-most-polluted-cities" target="_blank" rel="noopener noreferrer" style={{ color: "#5699af" }}>IQAir - World Most Polluted Cities</a>
                 </p>
               </div>
 
-              {/* Second scroll section - AQI Categories & Health Impact */}
-              <div
-                style={{
-                  height: "100vh",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "flex-start",
-                }}
-              >
-                <div
-                  style={{
-                    maxWidth: "450px",
-                    textAlign: "left",
-                  }}
-                >
-                  <h3
-                    style={{
-                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                      fontSize: "24px",
-                      fontWeight: "600",
-                      color: "#333",
-                      margin: "0 0 20px 0",
-                      lineHeight: "2.0",
-                      textAlign: "left",
-                    }}
-                  >
-                    AQI Categories & Health Impact
-                  </h3>
-
-                  {/* Good */}
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: "10px", marginBottom: "16px" }}>
-                    <span style={{ width: "14px", height: "14px", borderRadius: "50%", background: "#5699af", flexShrink: 0, marginTop: "6px" }} />
-                    <div style={{ lineHeight: "2.0" }}>
-                      <span style={{ fontFamily: "Georgia, 'Times New Roman', Times, serif", fontSize: "16px", fontWeight: "600", color: "#333" }}>Good (0–50): </span>
-                      <span style={{ fontFamily: "Georgia, 'Times New Roman', Times, serif", fontSize: "16px", color: "#555" }}>Minimal health impact.</span>
-                    </div>
-                  </div>
-
-                  {/* Satisfactory */}
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: "10px", marginBottom: "16px" }}>
-                    <span style={{ width: "14px", height: "14px", borderRadius: "50%", background: "#87beb1", flexShrink: 0, marginTop: "6px" }} />
-                    <div style={{ lineHeight: "2.0" }}>
-                      <span style={{ fontFamily: "Georgia, 'Times New Roman', Times, serif", fontSize: "16px", fontWeight: "600", color: "#333" }}>Satisfactory (51–100): </span>
-                      <span style={{ fontFamily: "Georgia, 'Times New Roman', Times, serif", fontSize: "16px", color: "#555" }}>May cause minor breathing discomfort for sensitive individuals.</span>
-                    </div>
-                  </div>
-
-                  {/* Moderate */}
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: "10px", marginBottom: "16px" }}>
-                    <span style={{ width: "14px", height: "14px", borderRadius: "50%", background: "#dfbfc6", flexShrink: 0, marginTop: "6px" }} />
-                    <div style={{ lineHeight: "2.0" }}>
-                      <span style={{ fontFamily: "Georgia, 'Times New Roman', Times, serif", fontSize: "16px", fontWeight: "600", color: "#333" }}>Moderate (101–200): </span>
-                      <span style={{ fontFamily: "Georgia, 'Times New Roman', Times, serif", fontSize: "16px", color: "#555" }}>Can lead to breathing discomfort for people with asthma or lung disease.</span>
-                    </div>
-                  </div>
-
-                  {/* Poor */}
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: "10px", marginBottom: "16px" }}>
-                    <span style={{ width: "14px", height: "14px", borderRadius: "50%", background: "#de9eaf", flexShrink: 0, marginTop: "6px" }} />
-                    <div style={{ lineHeight: "2.0" }}>
-                      <span style={{ fontFamily: "Georgia, 'Times New Roman', Times, serif", fontSize: "16px", fontWeight: "600", color: "#333" }}>Poor (201–300): </span>
-                      <span style={{ fontFamily: "Georgia, 'Times New Roman', Times, serif", fontSize: "16px", color: "#555" }}>May cause breathing discomfort with prolonged exposure.</span>
-                    </div>
-                  </div>
-
-                  {/* Very Poor */}
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: "10px", marginBottom: "16px" }}>
-                    <span style={{ width: "14px", height: "14px", borderRadius: "50%", background: "#5699af", flexShrink: 0, marginTop: "6px" }} />
-                    <div style={{ lineHeight: "2.0" }}>
-                      <span style={{ fontFamily: "Georgia, 'Times New Roman', Times, serif", fontSize: "16px", fontWeight: "600", color: "#333" }}>Very Poor (301–400): </span>
-                      <span style={{ fontFamily: "Georgia, 'Times New Roman', Times, serif", fontSize: "16px", color: "#555" }}>Prolonged exposure may result in respiratory illness.</span>
-                    </div>
-                  </div>
-
-                  {/* Severe */}
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
-                    <span style={{ width: "14px", height: "14px", borderRadius: "50%", background: "#c1616b", flexShrink: 0, marginTop: "6px" }} />
-                    <div style={{ lineHeight: "2.0" }}>
-                      <span style={{ fontFamily: "Georgia, 'Times New Roman', Times, serif", fontSize: "16px", fontWeight: "600", color: "#333" }}>Severe (401–500): </span>
-                      <span style={{ fontFamily: "Georgia, 'Times New Roman', Times, serif", fontSize: "16px", color: "#555" }}>Can cause respiratory effects even in healthy individuals.</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -2596,19 +2501,389 @@ export default function App() {
             </p>
           </div>
 
-          {/* Main visualization section with sticky chart */}
+          {/* AQI by category and states - Grid visualization */}
           <div
+            ref={gridSectionRef}
             style={{
-              display: "flex",
-              minHeight: "100vh",
-              padding: "20px 20px 20px 0",
+              padding: "0 40px 40px 40px",
+              width: "100%",
+              boxSizing: "border-box",
             }}
           >
+            {/* Header section - sticky in scrollable mode */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                marginTop: "150px",
+                marginBottom: "0px",
+                ...(viewMode === "scrollable" ? {
+                  position: "sticky",
+                  top: 0,
+                  backgroundColor: "#fff",
+                  zIndex: 100,
+                  paddingTop: "20px",
+                  paddingBottom: "20px",
+                  marginTop: "0px",
+                } : {}),
+              }}
+            >
+              {/* Left - Title and Tabs */}
+              <div>
+                <h2
+                  style={{
+                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                    fontSize: "28px",
+                    fontWeight: "700",
+                    color: "#333",
+                    margin: "0 0 15px 0",
+                  }}
+                >
+                  AQI by category and states
+                </h2>
+                {/* Tabs */}
+                <div style={{ display: "flex", gap: "30px" }}>
+                  {/* Sort Tab */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{
+                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontSize: "12px",
+                      color: "#666",
+                    }}>
+                      Sort by:
+                    </span>
+                    <select
+                      value={sortOrder}
+                      onChange={(e) => setSortOrder(e.target.value)}
+                      style={{
+                        fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                        fontSize: "12px",
+                        padding: "4px 8px",
+                        border: "1px solid #ddd",
+                        borderRadius: "4px",
+                        backgroundColor: "#fff",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <option value="alphabetical">Alphabetical</option>
+                      <option value="highToLow">Highest to Lowest AQI</option>
+                      <option value="lowToHigh">Lowest to Highest AQI</option>
+                    </select>
+                  </div>
+                  {/* View Tab */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{
+                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontSize: "12px",
+                      color: "#666",
+                    }}>
+                      View:
+                    </span>
+                    <button
+                      onClick={() => {
+                        setViewMode("overview");
+                        gridSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }}
+                      style={{
+                        fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                        fontSize: "12px",
+                        padding: "4px 12px",
+                        border: "1px solid #ddd",
+                        borderRadius: "4px 0 0 4px",
+                        backgroundColor: viewMode === "overview" ? "#5699af" : "#fff",
+                        color: viewMode === "overview" ? "#fff" : "#333",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Overview
+                    </button>
+                    <button
+                      onClick={() => setViewMode("scrollable")}
+                      style={{
+                        fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                        fontSize: "12px",
+                        padding: "4px 12px",
+                        border: "1px solid #ddd",
+                        borderLeft: "none",
+                        borderRadius: "0 4px 4px 0",
+                        backgroundColor: viewMode === "scrollable" ? "#5699af" : "#fff",
+                        color: viewMode === "scrollable" ? "#fff" : "#333",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Scrollable
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right - India map with How to read section */}
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "20px" }}>
+                {/* How to read section */}
+                <div style={{ maxWidth: "350px" }}>
+                  <p
+                    style={{
+                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontSize: "12px",
+                      fontWeight: "600",
+                      color: "#333",
+                      margin: "0 0 10px 0",
+                    }}
+                  >
+                    How to read?
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontSize: "11px",
+                      color: "#555",
+                      lineHeight: "1.5",
+                      margin: "0 0 6px 0",
+                    }}
+                  >
+                    Each circular visualization represents a State or Union Territory of India. Within each circle, every line corresponds to a single day of 2024. The length of the spikes indicates the severity of air pollution.
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontSize: "11px",
+                      color: "#555",
+                      lineHeight: "1.5",
+                      margin: "0",
+                    }}
+                  >
+                    Colors indicate AQI levels: blue (good) to pink/red (severe).
+                    <br />
+                    <a href="https://www.kaggle.com/datasets/bhadramohit/india-air-quality-index2024-dataset" target="_blank" rel="noopener noreferrer" style={{ color: "#5699af" }}>Source: Kaggle</a>
+                  </p>
+                </div>
+
+                {/* India map */}
+                <div style={{ width: "140px", height: "160px", position: "relative", flexShrink: 0 }}>
+                <object
+                  ref={indiaMapRef}
+                  data="/india-states.svg"
+                  type="image/svg+xml"
+                  width="140"
+                  height="160"
+                  style={{ pointerEvents: "none" }}
+                  onLoad={() => {
+                    // Initial styling when SVG loads
+                    if (indiaMapRef.current) {
+                      const svgDoc = indiaMapRef.current.contentDocument;
+                      if (svgDoc) {
+                        const paths = svgDoc.querySelectorAll("path");
+                        paths.forEach((path) => {
+                          path.style.fill = "#e0e0e0";
+                          path.style.stroke = "#999";
+                          path.style.strokeWidth = "0.3";
+                          path.style.opacity = "0.6";
+                          path.style.transition = "fill 0.2s, opacity 0.2s";
+                        });
+                      }
+                    }
+                  }}
+                />
+                </div>
+              </div>
+            </div>
+
+            {/* Grid of circular visualizations - Overview mode */}
+            {viewMode === "overview" && (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(8, 1fr)",
+                columnGap: "0px",
+                rowGap: "25px",
+                justifyItems: "center",
+                width: "100%",
+                position: "relative",
+                marginTop: "0px",
+              }}
+            >
+              {sortedStateData.map((stateInfo, index) => {
+                // Find the original index in stateData for scrollable view
+                const originalIndex = stateData.findIndex(s => s.state === stateInfo.state);
+                return (
+                  <div
+                    key={stateInfo.state}
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      width: "100%",
+                      maxWidth: "120px",
+                      cursor: "pointer",
+                    }}
+                    onMouseEnter={(e) => {
+                      setHoveredStateIndex(index);
+                      setGridTooltipPos({ x: e.clientX, y: e.clientY });
+                    }}
+                    onMouseMove={(e) => {
+                      setGridTooltipPos({ x: e.clientX, y: e.clientY });
+                    }}
+                    onMouseLeave={() => setHoveredStateIndex(null)}
+                    onClick={() => {
+                      setActiveStateIndex(originalIndex);
+                      setHoveredStateIndex(null);
+                      setViewMode("scrollable");
+                      setTimeout(() => {
+                        // Scroll to the specific state card
+                        stateRefs.current[originalIndex]?.scrollIntoView({ behavior: "smooth", block: "center" });
+                      }, 100);
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "120px",
+                        height: "120px",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      <div style={{ transform: "scale(0.22)", transformOrigin: "center center" }}>
+                        {renderCircularVisualization(stateInfo, true)}
+                      </div>
+                    </div>
+                    <p
+                      style={{
+                        fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                        fontSize: "9px",
+                        color: "#333",
+                        margin: "5px 0 0 0",
+                        textAlign: "center",
+                        maxWidth: "140px",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {stateInfo.state}
+                    </p>
+                  </div>
+                );
+              })}
+
+              {/* Custom tooltip for grid */}
+              {hoveredStateIndex !== null && sortedStateData[hoveredStateIndex] && (() => {
+                const stateInfo = sortedStateData[hoveredStateIndex];
+                // Use pre-calculated avgAQI
+                const avgAQI = stateInfo.avgAQI;
+                const categoryInfo = avgAQI ? getAQICategoryInfo(avgAQI) : null;
+
+                return (
+                  <div
+                    style={{
+                      position: "fixed",
+                      left: gridTooltipPos.x + 15,
+                      top: gridTooltipPos.y + 15,
+                      background: "white",
+                      border: "1px solid #ddd",
+                      borderRadius: "8px",
+                      padding: "12px 16px",
+                      boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+                      zIndex: 1000,
+                      maxWidth: "280px",
+                      pointerEvents: "none",
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                        fontSize: "14px",
+                        fontWeight: "bold",
+                        color: "#333",
+                        margin: "0 0 8px 0",
+                      }}
+                    >
+                      {stateInfo.state}
+                    </p>
+                    {avgAQI && categoryInfo && (
+                      <>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+                          <span
+                            style={{
+                              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                              fontSize: "12px",
+                              color: "#555",
+                            }}
+                          >
+                            Average AQI:
+                          </span>
+                          <span
+                            style={{
+                              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                              fontSize: "14px",
+                              fontWeight: "bold",
+                              color: categoryInfo.color,
+                            }}
+                          >
+                            {avgAQI}
+                          </span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                          <span
+                            style={{
+                              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                              fontSize: "12px",
+                              color: "#555",
+                            }}
+                          >
+                            Category:
+                          </span>
+                          <span
+                            style={{
+                              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                              fontSize: "12px",
+                              fontWeight: "bold",
+                              color: "white",
+                              background: categoryInfo.color,
+                              padding: "2px 8px",
+                              borderRadius: "4px",
+                            }}
+                          >
+                            {categoryInfo.category}
+                          </span>
+                        </div>
+                        <p
+                          style={{
+                            fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                            fontSize: "11px",
+                            color: "#666",
+                            margin: 0,
+                            lineHeight: "1.4",
+                            borderTop: "1px solid #eee",
+                            paddingTop: "8px",
+                          }}
+                        >
+                          {categoryInfo.health}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+            )}
+
+            {/* Main visualization section with sticky chart - Scrollable mode */}
+            {viewMode === "scrollable" && (
+            <div
+              ref={mainVisualizationRef}
+              style={{
+                display: "flex",
+                minHeight: "100vh",
+                padding: "20px 20px 20px 0",
+              }}
+            >
             {/* Sticky visualization on the left */}
             <div
               style={{
                 position: "sticky",
-                top: "50px",
+                top: "77px",
                 height: "fit-content",
                 flexShrink: 0,
                 marginLeft: "-50px",
@@ -2616,9 +2891,6 @@ export default function App() {
             >
               <div style={{ position: "relative" }}>
                 {stateData.length > 0 && renderCircularVisualization(stateData[activeStateIndex])}
-                <div style={{ position: "absolute", top: "20px", left: "20px" }}>
-                  {renderCircularHelpButton("stateViz")}
-                </div>
               </div>
             </div>
 
@@ -2649,6 +2921,9 @@ export default function App() {
                 Source: <a href="https://www.kaggle.com/datasets/bhadramohit/india-air-quality-index2024-dataset" target="_blank" rel="noopener noreferrer" style={{ color: "#5699af" }}>Kaggle - India Air Quality Index 2024 Dataset</a>
               </p>
             </div>
+          </div>
+          )}
+
           </div>
 
           {/* Transition text after state circular visualizations */}

@@ -2317,8 +2317,68 @@ export default function App() {
                   margin: "5px 0 0 0",
                 }}
               >
-                Feb 09, 2026
+                Feb 28, 2026
               </p>
+            </div>
+
+            {/* Scroll indicator - positioned at bottom of first page */}
+            <div
+              style={{
+                position: "absolute",
+                bottom: "40px",
+                left: "160px",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                cursor: "pointer",
+                zIndex: 2,
+              }}
+              onClick={() => introRef.current?.scrollIntoView({ behavior: "smooth" })}
+            >
+              <span
+                style={{
+                  fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                  fontSize: "18px",
+                  fontStyle: "italic",
+                  color: "#8e9aaf",
+                  marginBottom: "8px",
+                }}
+              >
+                Scroll
+              </span>
+              <svg
+                width="50"
+                height="50"
+                viewBox="0 0 50 50"
+                fill="none"
+                style={{
+                  animation: "bounce 2s infinite",
+                }}
+              >
+                <circle
+                  cx="25"
+                  cy="25"
+                  r="21"
+                  stroke="#8e9aaf"
+                  strokeWidth="2"
+                  fill="none"
+                />
+                <path
+                  d="M17 22L25 30L33 22"
+                  stroke="#8e9aaf"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                />
+                <path
+                  d="M25 14L25 28"
+                  stroke="#8e9aaf"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+              </svg>
             </div>
           </div>
 
@@ -4424,7 +4484,7 @@ export default function App() {
               padding: "0 40px",
               maxWidth: "1400px",
               margin: "0 auto",
-              marginTop: "50px",
+              marginTop: "150px",
             }}
           >
             {/* Left column - Sticky maps that transition */}
@@ -4496,31 +4556,32 @@ export default function App() {
                   style={{
                     display: "flex",
                     justifyContent: "center",
-                    gap: "20px",
+                    gap: "4px",
                     marginTop: "20px",
                     fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                    fontSize: "12px",
+                    fontSize: "11px",
                   }}
                 >
                   {[
-                    { color: "#5699af", label: "Good (0-50)" },
-                    { color: "#87beb1", label: "Satisfactory (51-100)" },
-                    { color: "#dfbfc6", label: "Moderate (101-200)" },
-                    { color: "#de9eaf", label: "Poor (201-300)" },
-                    { color: "#e07192", label: "Very Poor (301-400)" },
-                    { color: "#c1616b", label: "Severe (400+)" },
+                    { color: "#5699af", label: "Good", range: "0-50" },
+                    { color: "#87beb1", label: "Satisfactory", range: "51-100" },
+                    { color: "#dfbfc6", label: "Moderate", range: "101-200" },
+                    { color: "#de9eaf", label: "Poor", range: "201-300" },
+                    { color: "#e07192", label: "Very Poor", range: "301-400" },
+                    { color: "#c1616b", label: "Severe", range: "400+" },
+                    { color: "#ccc", label: "No Data", range: "" },
                   ].map((item, i) => (
-                    <div key={i} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                       <div
                         style={{
-                          width: "16px",
-                          height: "16px",
+                          width: "80px",
+                          height: "12px",
                           backgroundColor: item.color,
-                          opacity: 0.7,
-                          borderRadius: "2px",
+                          opacity: 0.8,
                         }}
                       />
-                      <span style={{ color: "#555" }}>{item.label}</span>
+                      <span style={{ color: "#555", marginTop: "6px", fontWeight: "500" }}>{item.label}</span>
+                      <span style={{ color: "#888", fontSize: "10px" }}>{item.range}</span>
                     </div>
                   ))}
                 </div>
@@ -4582,12 +4643,41 @@ export default function App() {
                 top: 0,
                 height: "100vh",
                 display: "flex",
-                alignItems: "center",
+                flexDirection: "column",
+                alignItems: "flex-start",
                 justifyContent: "center",
-                padding: "20px",
+                padding: "40px 20px 20px 60px",
               }}
             >
-              <svg width="500" height="400" style={{ overflow: "visible" }}>
+              {/* Title and Subtitle */}
+              <div style={{ marginBottom: "20px" }}>
+                <h3
+                  style={{
+                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                    fontSize: "20px",
+                    fontWeight: "600",
+                    color: "#333",
+                    margin: "0 0 8px 0",
+                    transition: "opacity 0.3s ease",
+                  }}
+                >
+                  {activeScatterIndex === 0
+                    ? "Correlation Mapping of Average Annual AQI vs Population"
+                    : "Correlation Mapping of Average Annual AQI vs Rainfall"}
+                </h3>
+                <p
+                  style={{
+                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                    fontSize: "14px",
+                    fontWeight: "400",
+                    color: "#888",
+                    margin: "0",
+                  }}
+                >
+                  Each dot represents a state or UT, hover for more info
+                </p>
+              </div>
+              <svg width="600" height="480" viewBox="0 0 500 400" style={{ overflow: "visible" }}>
                 {/* Axes */}
                 <line x1="60" y1="350" x2="480" y2="350" stroke="#ccc" strokeWidth="1" />
                 <line x1="60" y1="350" x2="60" y2="30" stroke="#ccc" strokeWidth="1" />
@@ -5157,7 +5247,10 @@ export default function App() {
                   y="0"
                   width="600"
                   height="700"
-                  style={{ opacity: 0.3 }}
+                  style={{
+                    opacity: 0.2,
+                    filter: "saturate(0) brightness(2.5) contrast(0.8)",
+                  }}
                 />
 
                 {/* Pollutant order for highlighting */}
@@ -5612,7 +5705,7 @@ export default function App() {
             display: "flex",
             alignItems: "flex-start",
             justifyContent: "center",
-            padding: "40px 40px",
+            padding: "120px 40px 40px 40px",
             backgroundColor: "#fff",
           }}
         >
@@ -5669,6 +5762,169 @@ export default function App() {
             >
               Why National Standards Differ from WHO Guidelines?
             </h2>
+
+            {/* PM2.5 Comparison KPIs */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                justifyContent: "center",
+                alignItems: "flex-start",
+                gap: "180px",
+                marginBottom: "60px",
+              }}
+            >
+              {/* WHO Standard KPI */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                  position: "relative",
+                  minHeight: "220px",
+                }}
+              >
+                <img
+                  src="/Cloud.svg"
+                  alt=""
+                  style={{
+                    position: "absolute",
+                    top: "0",
+                    left: "20px",
+                    width: "240px",
+                    zIndex: 0,
+                    opacity: 0.9,
+                    pointerEvents: "none",
+                  }}
+                />
+                <h3
+                  style={{
+                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                    fontSize: "56px",
+                    fontWeight: "700",
+                    color: "#3a9bb2",
+                    margin: "0",
+                    lineHeight: "1",
+                    position: "relative",
+                    zIndex: 1,
+                    marginLeft: "80px",
+                    marginTop: "50px",
+                  }}
+                >
+                  5 µg/m³
+                </h3>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "stretch",
+                    marginTop: "15px",
+                    marginLeft: "80px",
+                    position: "relative",
+                    zIndex: 1,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "4px",
+                      backgroundColor: "#3a9bb2",
+                      marginRight: "12px",
+                      borderRadius: "2px",
+                    }}
+                  />
+                  <p
+                    style={{
+                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontSize: "14px",
+                      fontWeight: "400",
+                      fontStyle: "italic",
+                      color: "#333",
+                      lineHeight: "1.5",
+                      margin: "0",
+                      maxWidth: "180px",
+                      textAlign: "left",
+                    }}
+                  >
+                    PM2.5 annual limit recommended by WHO guidelines.
+                  </p>
+                </div>
+              </div>
+
+              {/* National Standard KPI */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                  position: "relative",
+                  minHeight: "220px",
+                }}
+              >
+                <img
+                  src="/Cloud.svg"
+                  alt=""
+                  style={{
+                    position: "absolute",
+                    top: "0",
+                    left: "20px",
+                    width: "240px",
+                    zIndex: 0,
+                    opacity: 0.9,
+                    pointerEvents: "none",
+                  }}
+                />
+                <h3
+                  style={{
+                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                    fontSize: "56px",
+                    fontWeight: "700",
+                    color: "#3a9bb2",
+                    margin: "0",
+                    lineHeight: "1",
+                    position: "relative",
+                    zIndex: 1,
+                    marginLeft: "80px",
+                    marginTop: "50px",
+                  }}
+                >
+                  40 µg/m³
+                </h3>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "stretch",
+                    marginTop: "15px",
+                    marginLeft: "80px",
+                    position: "relative",
+                    zIndex: 1,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "4px",
+                      backgroundColor: "#3a9bb2",
+                      marginRight: "12px",
+                      borderRadius: "2px",
+                    }}
+                  />
+                  <p
+                    style={{
+                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontSize: "14px",
+                      fontWeight: "400",
+                      fontStyle: "italic",
+                      color: "#333",
+                      lineHeight: "1.5",
+                      margin: "0",
+                      maxWidth: "180px",
+                      textAlign: "left",
+                    }}
+                  >
+                    PM2.5 annual limit set by India's national standard.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <p
               style={{
                 fontSize: "16px",

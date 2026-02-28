@@ -2217,7 +2217,32 @@ export default function App() {
 
   return (
     <div style={{ fontFamily: "Georgia, 'Times New Roman', Times, serif" }}>
-      {loading && <p style={{ padding: "20px" }}>Loading data...</p>}
+      {loading && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "#fff",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 9999,
+          }}
+        >
+          <p
+            style={{
+              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+              fontSize: "18px",
+              color: "#666",
+            }}
+          >
+            Loading data...
+          </p>
+        </div>
+      )}
       {error && <p style={{ color: "red", padding: "20px" }}>Error: {error}</p>}
 
       {/* Timeline/Scroll View */}
@@ -6160,9 +6185,7 @@ export default function App() {
                 top: 0,
                 left: 0,
                 width: "100%",
-                transform: `translateX(${cyclingProgress <= 0.5 ? (1 - cyclingProgress * 2) * 100 : -100}%)`,
-                opacity: cyclingProgress <= 0.5 ? 1 : 0,
-                transition: "opacity 0.3s ease",
+                transform: `translateX(${100 - cyclingProgress * 400}%)`,
               }}
             >
               <h3
@@ -6198,9 +6221,7 @@ export default function App() {
                 top: 0,
                 left: 0,
                 width: "100%",
-                transform: `translateX(${cyclingProgress > 0.5 ? (1 - (cyclingProgress - 0.5) * 2) * 100 : 100}%)`,
-                opacity: cyclingProgress > 0.5 ? 1 : 0,
-                transition: "opacity 0.3s ease",
+                transform: `translateX(${100 - (cyclingProgress - 0.5) * 400}%)`,
               }}
             >
               <h3

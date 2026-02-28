@@ -58,18 +58,32 @@ function CyclingAnimation() {
         }}
       >
         {/* Title */}
-        <h1
+        <h2
           style={{
             fontFamily: "Georgia, serif",
-            fontSize: "32px",
-            fontWeight: "400",
+            fontSize: "24px",
+            fontWeight: "500",
             textAlign: "center",
-            color: "#000",
-            marginBottom: "40px",
+            color: "#333",
+            marginBottom: "16px",
           }}
         >
-          Scroll to Ride
-        </h1>
+          Better Cycling and Walking Infrastructure
+        </h2>
+        <p
+          style={{
+            fontFamily: "Georgia, serif",
+            fontSize: "16px",
+            fontWeight: "300",
+            textAlign: "center",
+            color: "#555",
+            maxWidth: "700px",
+            margin: "0 auto 40px auto",
+            lineHeight: "1.8",
+          }}
+        >
+          Improving infrastructure for cycling and walking can significantly reduce air pollution by encouraging people to rely less on fuel-powered vehicles, lowering emissions and easing traffic congestion.
+        </p>
 
         {/* Animation container */}
         <div

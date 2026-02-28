@@ -2362,7 +2362,7 @@ export default function App() {
             >
               <span
                 style={{
-                  fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                  fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                   fontSize: "18px",
                   fontStyle: "italic",
                   color: "#8e9aaf",
@@ -2372,8 +2372,8 @@ export default function App() {
                 Scroll
               </span>
               <svg
-                width="50"
-                height="50"
+                width="36"
+                height="36"
                 viewBox="0 0 50 50"
                 fill="none"
                 style={{
@@ -2411,7 +2411,7 @@ export default function App() {
           <div
             ref={introRef}
             style={{
-              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
               fontSize: "16px",
               fontWeight: "400",
               color: "#555",
@@ -2508,7 +2508,7 @@ export default function App() {
                 />
                 <p
                   style={{
-                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                     fontSize: "16px",
                     fontWeight: "400",
                     fontStyle: "italic",
@@ -2585,7 +2585,7 @@ export default function App() {
                 />
                 <p
                   style={{
-                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                     fontSize: "16px",
                     fontWeight: "400",
                     fontStyle: "italic",
@@ -2662,7 +2662,7 @@ export default function App() {
                 />
                 <p
                   style={{
-                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                     fontSize: "16px",
                     fontWeight: "400",
                     fontStyle: "italic",
@@ -2682,7 +2682,7 @@ export default function App() {
           {/* Post-KPI paragraph section */}
           <div
             style={{
-              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
               fontSize: "16px",
               fontWeight: "400",
               color: "#555",
@@ -2757,7 +2757,7 @@ export default function App() {
               <div style={{ flex: 1, paddingLeft: "40px" }}>
                 <p
                   style={{
-                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                     fontSize: "16px",
                     color: "#555",
                     lineHeight: "2.0",
@@ -2782,7 +2782,7 @@ export default function App() {
               <div style={{ flex: 1, paddingRight: "40px", display: "flex", justifyContent: "flex-end" }}>
                 <p
                   style={{
-                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                     fontSize: "16px",
                     color: "#555",
                     lineHeight: "2.0",
@@ -2853,7 +2853,7 @@ export default function App() {
               <div style={{ flex: 1, paddingLeft: "40px" }}>
                 <p
                   style={{
-                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                     fontSize: "16px",
                     color: "#555",
                     lineHeight: "2.0",
@@ -2877,7 +2877,7 @@ export default function App() {
               <div style={{ flex: 1, paddingRight: "40px", display: "flex", justifyContent: "flex-end" }}>
                 <p
                   style={{
-                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                     fontSize: "16px",
                     color: "#555",
                     lineHeight: "2.0",
@@ -2947,7 +2947,7 @@ export default function App() {
               <div style={{ flex: 1, paddingLeft: "40px" }}>
                 <p
                   style={{
-                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                     fontSize: "16px",
                     color: "#555",
                     lineHeight: "2.0",
@@ -2979,20 +2979,20 @@ export default function App() {
                 height: "80px",
                 backgroundColor: "#5699af",
                 marginRight: "20px",
-                marginTop: "8px",
                 flexShrink: 0,
               }}
             />
             <p
               style={{
                 fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                fontSize: "24px",
-                fontWeight: "500",
+                fontSize: "22px",
+                fontWeight: "300",
                 color: "#333",
                 textAlign: "left",
                 maxWidth: "800px",
                 lineHeight: "2.0",
                 margin: 0,
+                marginTop: "-10px",
               }}
             >
               So, What strategies and interventions has India put in place to tackle air quality concerns?
@@ -3514,20 +3514,20 @@ export default function App() {
                 height: "80px",
                 backgroundColor: "#5699af",
                 marginRight: "20px",
-                marginTop: "8px",
                 flexShrink: 0,
               }}
             />
             <p
               style={{
                 fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                fontSize: "24px",
-                fontWeight: "400",
+                fontSize: "22px",
+                fontWeight: "300",
                 color: "#333",
                 textAlign: "left",
                 maxWidth: "800px",
                 lineHeight: "2.0",
                 margin: 0,
+                marginTop: "-10px",
               }}
             >
               India's response to air pollution spans decades of policies, monitoring frameworks, and emergency interventions. On paper, the actions are many. On the ground, however, clean air remains out of reach for most.
@@ -3923,7 +3923,7 @@ export default function App() {
                 </h2>
                 <p
                   style={{
-                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                     fontSize: "16px",
                     fontWeight: "400",
                     color: "#333",
@@ -3969,7 +3969,7 @@ export default function App() {
                 </h2>
                 <p
                   style={{
-                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                     fontSize: "16px",
                     fontWeight: "400",
                     color: "#555",
@@ -4019,20 +4019,20 @@ export default function App() {
                 height: "80px",
                 backgroundColor: "#5699af",
                 marginRight: "20px",
-                marginTop: "8px",
                 flexShrink: 0,
               }}
             />
             <p
               style={{
                 fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                fontSize: "24px",
-                fontWeight: "400",
+                fontSize: "22px",
+                fontWeight: "300",
                 color: "#333",
                 textAlign: "left",
                 maxWidth: "800px",
                 lineHeight: "2.0",
                 margin: 0,
+                marginTop: "-10px",
               }}
             >
               Now, let's zoom in and explore how air pollution unfolds across the year in each state and its major cities. By looking more closely at these regional patterns, we can see how air quality shifts over time and which areas experience the most prolonged exposure to unhealthy conditions.
@@ -4632,20 +4632,20 @@ export default function App() {
                 height: "80px",
                 backgroundColor: "#5699af",
                 marginRight: "20px",
-                marginTop: "8px",
                 flexShrink: 0,
               }}
             />
             <p
               style={{
                 fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                fontSize: "24px",
-                fontWeight: "400",
+                fontSize: "22px",
+                fontWeight: "300",
                 color: "#333",
                 textAlign: "left",
                 maxWidth: "800px",
                 lineHeight: "2.0",
                 margin: 0,
+                marginTop: "-10px",
               }}
             >
               The stark contrast in AQI between northern India and the southern peninsula invites a deeper exploration into how geography, climate, and human activity shape the air quality.
@@ -5130,7 +5130,7 @@ export default function App() {
             {/* Text */}
             <p
               style={{
-                fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                 fontSize: "16px",
                 color: "#555",
                 lineHeight: "2.0",
@@ -5182,7 +5182,7 @@ export default function App() {
 
             <p
               style={{
-                fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                 fontSize: "16px",
                 color: "#555",
                 lineHeight: "2.0",
@@ -5740,20 +5740,20 @@ export default function App() {
               height: "80px",
               backgroundColor: "#5699af",
               marginRight: "20px",
-              marginTop: "8px",
               flexShrink: 0,
             }}
           />
           <p
             style={{
-              fontSize: "24px",
+              fontSize: "22px",
               fontFamily: "Georgia, 'Times New Roman', Times, serif",
               fontWeight: "300",
               lineHeight: "2.0",
-              maxWidth: "900px",
+              maxWidth: "800px",
               textAlign: "left",
               color: "#333",
               margin: 0,
+              marginTop: "-10px",
             }}
           >
             As we've seen the sources and impacts of air pollution across India, the next step is to explore how the country can turn the tide. Improving India's air requires a closer look at the standards that govern emissions, the practical solutions that can be implemented, and the strategies that can guide long-term change.
@@ -6203,7 +6203,7 @@ export default function App() {
               <p
                 style={{
                   fontSize: "16px",
-                  fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                  fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                   fontWeight: "300",
                   lineHeight: "1.8",
                   color: "#555",
@@ -6239,7 +6239,7 @@ export default function App() {
               <p
                 style={{
                   fontSize: "16px",
-                  fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                  fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                   fontWeight: "300",
                   lineHeight: "1.8",
                   color: "#555",

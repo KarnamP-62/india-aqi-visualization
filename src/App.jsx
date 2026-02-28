@@ -5074,7 +5074,7 @@ export default function App() {
             {/* Himalayas Image */}
             <div style={{ marginBottom: "40px" }}>
               <img
-                src="/Himalayas.svg"
+                src="/Himalayas.png"
                 alt="Himalayas blocking air flow"
                 style={{
                   maxWidth: "100%",

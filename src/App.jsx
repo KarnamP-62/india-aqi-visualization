@@ -1154,10 +1154,10 @@ export default function App() {
       // Only activates when the section enters the viewport
       const scrollTrigger = ScrollTrigger.create({
         trigger: cyclingRef.current,
-        start: "top 80%",  // Start when top of section is 80% down the viewport
-        end: "bottom 20%", // End when bottom of section is 20% from top
+        start: "top top",  // Start when top of section reaches top of viewport
+        end: "bottom bottom", // End when bottom of section reaches bottom of viewport
         scrub: 0.5,
-        // markers: true, // Uncomment for debugging
+        // markers: true, // Debug markers disabled
         onUpdate: (self) => {
           // Only animate if we're actually in the section
           if (!self.isActive) return;
@@ -5770,7 +5770,7 @@ export default function App() {
                 flexDirection: "row",
                 justifyContent: "center",
                 alignItems: "flex-start",
-                gap: "180px",
+                gap: "220px",
                 marginBottom: "60px",
               }}
             >
@@ -6012,281 +6012,93 @@ export default function App() {
             </p>
           </div>
 
-          {/* KPI Grid - Full Width */}
+          {/* KPI Grid - 2x2 Hover Boxes */}
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gap: "60px",
-              marginTop: "60px",
+              gridTemplateColumns: "repeat(2, 1fr)",
+              gap: "25px",
               padding: "0 40px",
               fontFamily: "Georgia, 'Times New Roman', Times, serif",
-            }}
-          >
-            {/* KPI 1 */}
-            <div>
-              <h3
-                style={{
-                  fontSize: "16px",
-                  fontWeight: "700",
-                  color: "#5B7DB8",
-                  lineHeight: "2.0",
-                  marginBottom: "16px",
-                  textAlign: "left",
-                }}
-              >
-                Differentiating better air quality and net-zero emissions for climate change
-              </h3>
-              <p
-                style={{
-                  fontSize: "16px",
-                  fontWeight: "300",
-                  lineHeight: "2.0",
-                  color: "#555",
-                  textAlign: "left",
-                }}
-              >
-                Air pollution and climate change both come mainly from fossil fuel burning, but they require different solutions. Climate policy focuses on long-term net-zero goals, while air quality management targets immediate pollutant limits. Cutting local emissions quickly improves health and air conditions, unlike climate benefits which are global and slower. Air pollution is more visible and regulated nationally, making accountability clearer. Some climate fixes, like biofuels, can worsen air pollution, so policies must balance both.
-              </p>
-            </div>
-
-            {/* KPI 2 */}
-            <div>
-              <h3
-                style={{
-                  fontSize: "16px",
-                  fontWeight: "700",
-                  color: "#5B7DB8",
-                  lineHeight: "2.0",
-                  marginBottom: "16px",
-                  textAlign: "left",
-                }}
-              >
-                An aggressive push for more ambient pollution monitoring
-              </h3>
-              <p
-                style={{
-                  fontSize: "16px",
-                  fontWeight: "300",
-                  lineHeight: "2.0",
-                  color: "#555",
-                  textAlign: "left",
-                }}
-              >
-                Effective air quality management begins with measurement. Monitoring reveals pollution levels, hotspots, and trends over time. India has long faced gaps due to the high cost of reference-grade equipment, but low-cost sensors, combined with satellite data and AI, can help expand coverage. Increasing monitoring density nationwide and ensuring open access to data are essential for stronger air quality policy and action.</p>
-            </div>
-
-            {/* KPI 3 */}
-            <div>
-              <h3
-                style={{
-                  fontSize: "16px",
-                  fontWeight: "700",
-                  color: "#5B7DB8",
-                  lineHeight: "2.0",
-                  marginBottom: "16px",
-                  textAlign: "left",
-                }}
-              >
-                Insisting on the cities to build an energy and emissions baseline for accountability
-              </h3>
-              <p
-                style={{
-                  fontSize: "16px",
-                  fontWeight: "300",
-                  lineHeight: "2.0",
-                  color: "#555",
-                  textAlign: "left",
-                }}
-              >
-                Cities need a bottom-up approach to reduce emissions, starting with detailed local baselines built from on-the-ground data on industries, household energy use, and traffic. Without this foundation, it is difficult to measure progress or assess mitigation success. India’s NCAP (2019) requires 131 non-attainment cities to develop such baselines. While satellites and AI can support analysis, they cannot replace local data collection, modelling, and sustained political commitment.    </p>
-            </div>
-
-            {/* KPI 4 */}
-            <div>
-              <h3
-                style={{
-                  fontSize: "16px",
-                  fontWeight: "700",
-                  color: "#5B7DB8",
-                  lineHeight: "2.0",
-                  marginBottom: "16px",
-                  textAlign: "left",
-                }}
-              >
-                Unification of emission inventories at the national scale
-              </h3>
-              <p
-                style={{
-                  fontSize: "16px",
-                  fontWeight: "300",
-                  lineHeight: "2.0",
-                  color: "#555",
-                  textAlign: "left",
-                }}
-              >
-                A standardized, high-resolution emissions inventory is essential for NCAP’s success, helping cities design, track, and strengthen pollution control strategies while supporting future NCAP 2.0 efforts beyond urban areas. Currently, fragmented inventories built with different methods limit comparability and weaken national baselines. India needs a unified, multi-pollutant, high-resolution emissions inventory—developed through collaborative inter-comparison—to reflect local sources and guide stronger clean air science and policy.    </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Infrastructural Changes Title */}
-      {(
-        <div
-          style={{
-            padding: "80px 120px",
-            backgroundColor: "#fff",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: "24px",
-              fontFamily: "Georgia, 'Times New Roman', Times, serif",
-              fontWeight: "400",
               maxWidth: "900px",
-              margin: "0 auto",
-              textAlign: "left",
-              color: "#333",
+              margin: "60px auto 0 auto",
+              overflow: "hidden",
             }}
           >
-            Infrastructural Changes That Would Help Achieve Better Air Quality
-          </h2>
-        </div>
-      )}
-
-      {/* Infrastructure Sections - Two Columns */}
-      {(
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            padding: "60px 120px",
-            backgroundColor: "#fff",
-            gap: "80px",
-          }}
-        >
-          {/* Column 1 */}
-          <div
-            style={{
-              fontFamily: "Georgia, 'Times New Roman', Times, serif",
-            }}
-          >
-            <img
-              src="/infa1.svg"
-              alt="Infrastructure 1"
-              style={{ width: "100%", height: "auto", marginBottom: "30px" }}
-            />
-            <h3
-              style={{
-                fontSize: "24px",
-                fontWeight: "500",
-                color: "#333",
-                marginBottom: "20px",
-                textAlign: "left",
-              }}
-            >
-              Better Cycling and Walking Infrastructure
-            </h3>
-            <p
-              style={{
-                fontSize: "16px",
-                fontWeight: "300",
-                lineHeight: "2.0",
-                color: "#555",
-                textAlign: "left",
-              }}
-            >
-              Improving infrastructure for cycling and walking on a daily basis can significantly reduce air pollution. It encourages people to rely less on fuel-powered vehicles, which in turn lowers emissions. Moreover, given the persistent traffic congestion in India, there is a strong likelihood that people would embrace these alternatives.
-            </p>
-          </div>
-
-          {/* Column 2 */}
-          <div
-            style={{
-              fontFamily: "Georgia, 'Times New Roman', Times, serif",
-            }}
-          >
-            <img
-              src="/infa-2.svg"
-              alt="Infrastructure 2"
-              style={{ width: "100%", height: "auto", marginBottom: "30px" }}
-            />
-            <h3
-              style={{
-                fontSize: "24px",
-                fontWeight: "500",
-                color: "#333",
-                marginBottom: "20px",
-                textAlign: "left",
-              }}
-            >
-              Better Electricity Infrastructure
-            </h3>
-            <p
-              style={{
-                fontSize: "16px",
-                fontWeight: "300",
-                lineHeight: "2.0",
-                color: "#555",
-                textAlign: "left",
-              }}
-            >
-              Enhancing electricity infrastructure can play a crucial role in reducing air pollution. Reliable and widespread electricity supply decreases the reliance on diesel generators, which are major sources of harmful emissions. It also reduces the need for traditional cooking fuels, such as wood, coal, or other biomass, which release smoke and particulate matter into the air. Transitioning to cleaner and greener sources of electricity, such as solar, wind, or hydropower, is essential not only for meeting energy needs but also for mitigating environmental pollution and protecting public health.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Closing Text Section */}
-      {(
-        <div
-          style={{
-            padding: "80px 120px",
-            backgroundColor: "#fff",
-          }}
-        >
-          <div
-            style={{
-              maxWidth: "900px",
-              margin: "0 auto",
-              fontFamily: "Georgia, 'Times New Roman', Times, serif",
-              color: "#333",
-            }}
-          >
-            <p
-              style={{
-                fontSize: "16px",
-                fontWeight: "300",
-                lineHeight: "2.0",
-                textAlign: "left",
-                marginBottom: "24px",
-              }}
-            >
-              Even if every measure were implemented perfectly, India will need time before the air truly begins to clear. One major step forward has been the Bharat Stage VI emission standards, introduced in 2020 for cars, scooters, trucks, and most vehicles, targeting tailpipe pollutants like nitrogen oxides and fine particulate matter. By skipping Stage V, India aligned its regulations with the European Union, making it one of the country's most ambitious efforts to fight air pollution.
-            </p>
-            <p
-              style={{
-                fontSize: "16px",
-                fontWeight: "300",
-                lineHeight: "2.0",
-                textAlign: "left",
-              }}
-            >
-              But change doesn't happen overnight. Not everyone will buy a new vehicle immediately, and even building better cycling and walking infrastructure takes time—not just to construct, but for people to adapt and start using it regularly. Policies and infrastructure may be slow to show results, yet the sooner India begins, the sooner its people can breathe cleaner air.
-            </p>
-            <p
-              style={{
-                fontSize: "24px",
-                fontWeight: "600",
-                lineHeight: "2.0",
-                textAlign: "center",
-                color: "#5B7DB8",
-                marginTop: "120px",
-              }}
-            >
-              In a country where billions live and breathe, clean air is not a luxury—it is a basic right and a shared responsibility.
-            </p>
+            {[
+              {
+                title: "Differentiating better air quality and net-zero emissions for climate change",
+                text: "Air pollution and climate change both come mainly from fossil fuel burning, but they require different solutions. Climate policy focuses on long-term net-zero goals, while air quality management targets immediate pollutant limits. Cutting local emissions quickly improves health and air conditions, unlike climate benefits which are global and slower. Air pollution is more visible and regulated nationally, making accountability clearer. Some climate fixes, like biofuels, can worsen air pollution, so policies must balance both."
+              },
+              {
+                title: "An aggressive push for more ambient pollution monitoring",
+                text: "Effective air quality management begins with measurement. Monitoring reveals pollution levels, hotspots, and trends over time. India has long faced gaps due to the high cost of reference-grade equipment, but low-cost sensors, combined with satellite data and AI, can help expand coverage. Increasing monitoring density nationwide and ensuring open access to data are essential for stronger air quality policy and action."
+              },
+              {
+                title: "Insisting on the cities to build an energy and emissions baseline for accountability",
+                text: "Cities need a bottom-up approach to reduce emissions, starting with detailed local baselines built from on-the-ground data on industries, household energy use, and traffic. Without this foundation, it is difficult to measure progress or assess mitigation success. India's NCAP (2019) requires 131 non-attainment cities to develop such baselines. While satellites and AI can support analysis, they cannot replace local data collection, modelling, and sustained political commitment."
+              },
+              {
+                title: "Unification of emission inventories at the national scale",
+                text: "A standardized, high-resolution emissions inventory is essential for NCAP's success, helping cities design, track, and strengthen pollution control strategies while supporting future NCAP 2.0 efforts beyond urban areas. Currently, fragmented inventories built with different methods limit comparability and weaken national baselines. India needs a unified, multi-pollutant, high-resolution emissions inventory—developed through collaborative inter-comparison—to reflect local sources and guide stronger clean air science and policy."
+              }
+            ].map((item, index) => (
+              <div
+                key={index}
+                style={{
+                  backgroundColor: "#e0e0e0",
+                  borderRadius: "16px",
+                  padding: "35px 30px",
+                  height: "180px",
+                  overflow: "hidden",
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "#5699af";
+                  e.currentTarget.querySelector('.box-title').style.display = "none";
+                  e.currentTarget.querySelector('.hover-text').style.display = "block";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "#e0e0e0";
+                  e.currentTarget.querySelector('.box-title').style.display = "block";
+                  e.currentTarget.querySelector('.hover-text').style.display = "none";
+                }}
+              >
+                <h3
+                  className="box-title"
+                  style={{
+                    fontSize: "20px",
+                    fontWeight: "600",
+                    color: "#5699af",
+                    lineHeight: "1.5",
+                    margin: 0,
+                    textAlign: "left",
+                  }}
+                >
+                  {item.title}
+                </h3>
+                <p
+                  className="hover-text"
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: "400",
+                    lineHeight: "1.6",
+                    color: "#fff",
+                    textAlign: "left",
+                    margin: 0,
+                    display: "none",
+                    overflow: "auto",
+                    maxHeight: "110px",
+                  }}
+                >
+                  {item.text}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -6309,10 +6121,115 @@ export default function App() {
             overflow: "hidden",
             display: "flex",
             flexDirection: "column",
-            justifyContent: "center",
+            justifyContent: "flex-start",
             alignItems: "center",
+            paddingTop: "80px",
           }}
         >
+          {/* Title inside sticky container */}
+          <h2
+            style={{
+              fontSize: "24px",
+              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+              fontWeight: "400",
+              maxWidth: "900px",
+              width: "90%",
+              textAlign: "center",
+              color: "#333",
+              marginBottom: "100px",
+            }}
+          >
+            Infrastructural Changes That Would Help Achieve Better Air Quality
+          </h2>
+
+          {/* Scrolling text container */}
+          <div
+            style={{
+              position: "relative",
+              width: "60%",
+              maxWidth: "600px",
+              height: "200px",
+              overflow: "hidden",
+              marginBottom: "50px",
+            }}
+          >
+            {/* First text - Better Cycling (visible 0-50%) */}
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                transform: `translateX(${cyclingProgress <= 0.5 ? (1 - cyclingProgress * 2) * 100 : -100}%)`,
+                opacity: cyclingProgress <= 0.5 ? 1 : 0,
+                transition: "opacity 0.3s ease",
+              }}
+            >
+              <h3
+                style={{
+                  fontSize: "20px",
+                  fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                  fontWeight: "500",
+                  color: "#333",
+                  marginBottom: "15px",
+                  textAlign: "left",
+                }}
+              >
+                Better Cycling and Walking Infrastructure
+              </h3>
+              <p
+                style={{
+                  fontSize: "16px",
+                  fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                  fontWeight: "300",
+                  lineHeight: "1.8",
+                  color: "#555",
+                  textAlign: "left",
+                }}
+              >
+                Improving infrastructure for cycling and walking on a daily basis can significantly reduce air pollution. It encourages people to rely less on fuel-powered vehicles, which in turn lowers emissions. Moreover, given the persistent traffic congestion in India, there is a strong likelihood that people would embrace these alternatives.
+              </p>
+            </div>
+
+            {/* Second text - Better Electricity (visible 50-100%) */}
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                transform: `translateX(${cyclingProgress > 0.5 ? (1 - (cyclingProgress - 0.5) * 2) * 100 : 100}%)`,
+                opacity: cyclingProgress > 0.5 ? 1 : 0,
+                transition: "opacity 0.3s ease",
+              }}
+            >
+              <h3
+                style={{
+                  fontSize: "20px",
+                  fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                  fontWeight: "500",
+                  color: "#333",
+                  marginBottom: "15px",
+                  textAlign: "left",
+                }}
+              >
+                Better Electricity Infrastructure
+              </h3>
+              <p
+                style={{
+                  fontSize: "16px",
+                  fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                  fontWeight: "300",
+                  lineHeight: "1.8",
+                  color: "#555",
+                  textAlign: "left",
+                }}
+              >
+                Enhancing electricity infrastructure can play a crucial role in reducing air pollution. Reliable and widespread electricity supply decreases the reliance on diesel generators, which are major sources of harmful emissions. It also reduces the need for traditional cooking fuels, such as wood, coal, or other biomass, which release smoke and particulate matter into the air. Transitioning to cleaner and greener sources of electricity, such as solar, wind, or hydropower, is essential not only for meeting energy needs but also for mitigating environmental pollution and protecting public health.
+              </p>
+            </div>
+          </div>
+
           {/* Animation container */}
           <div
             style={{
@@ -6760,6 +6677,59 @@ export default function App() {
           )}
         </div>
       </div>
+
+      {/* Closing Text Section */}
+      {(
+        <div
+          style={{
+            padding: "80px 120px",
+            backgroundColor: "#fff",
+          }}
+        >
+          <div
+            style={{
+              maxWidth: "900px",
+              margin: "0 auto",
+              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+              color: "#333",
+            }}
+          >
+            <p
+              style={{
+                fontSize: "16px",
+                fontWeight: "300",
+                lineHeight: "2.0",
+                textAlign: "left",
+                marginBottom: "24px",
+              }}
+            >
+              Even if every measure were implemented perfectly, India will need time before the air truly begins to clear. One major step forward has been the Bharat Stage VI emission standards, introduced in 2020 for cars, scooters, trucks, and most vehicles, targeting tailpipe pollutants like nitrogen oxides and fine particulate matter. By skipping Stage V, India aligned its regulations with the European Union, making it one of the country's most ambitious efforts to fight air pollution.
+            </p>
+            <p
+              style={{
+                fontSize: "16px",
+                fontWeight: "300",
+                lineHeight: "2.0",
+                textAlign: "left",
+              }}
+            >
+              But change doesn't happen overnight. Not everyone will buy a new vehicle immediately, and even building better cycling and walking infrastructure takes time—not just to construct, but for people to adapt and start using it regularly. Policies and infrastructure may be slow to show results, yet the sooner India begins, the sooner its people can breathe cleaner air.
+            </p>
+            <p
+              style={{
+                fontSize: "24px",
+                fontWeight: "600",
+                lineHeight: "2.0",
+                textAlign: "center",
+                color: "#5B7DB8",
+                marginTop: "120px",
+              }}
+            >
+              In a country where billions live and breathe, clean air is not a luxury—it is a basic right and a shared responsibility.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* References Section */}
       {(

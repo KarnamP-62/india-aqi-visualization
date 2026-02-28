@@ -103,7 +103,7 @@ function LifeExpectancyPlot({ data }) {
     URL.revokeObjectURL(url);
   };
 
-  const margin = { top: 50, right: 40, bottom: 120, left: 70 };
+  const margin = { top: 20, right: 40, bottom: 120, left: 70 };
   const width = 1100;
   const height = 500;
   const plotW = width - margin.left - margin.right;
@@ -122,9 +122,34 @@ function LifeExpectancyPlot({ data }) {
   const nationalColor = "#c1616b"; // Red for National
 
   return (
-    <div style={{ display: "flex", justifyContent: "center", padding: "20px 0", background: "#fff" }}>
+    <div style={{ display: "flex", justifyContent: "flex-start", padding: "20px 0", background: "#fff" }}>
       <div style={{ position: "relative" }}>
-        <svg ref={svgRef} width={width} height={height} style={{ fontFamily: "Georgia, 'Times New Roman', Times, serif" }}>
+        {/* Title and subtitle outside SVG */}
+        <div style={{ marginBottom: "20px", paddingLeft: `${margin.left}px` }}>
+          <h3
+            style={{
+              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+              fontSize: "22px",
+              fontWeight: "600",
+              color: "#333",
+              margin: "0 0 8px 0",
+            }}
+          >
+            Life Expectancy Gains from Reducing PM2.5 — by State/UT
+          </h3>
+          <p
+            style={{
+              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+              fontSize: "14px",
+              fontWeight: "400",
+              color: "#888",
+              margin: "0",
+            }}
+          >
+            Potential years of life gained if PM2.5 reduced to target levels
+          </p>
+        </div>
+        <svg ref={svgRef} width={width} height={height - 30} style={{ fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif" }}>
           {/* Grid lines */}
           {[0, 2, 4, 6, 8, 10].filter(v => v <= maxGain).map((val) => (
             <g key={val}>
@@ -292,16 +317,8 @@ function LifeExpectancyPlot({ data }) {
             );
           })}
 
-          {/* Title */}
-          <text x={margin.left} y={22} fontSize="14" fontWeight="600" fill="#333">
-            Life Expectancy Gains from Reducing PM2.5 — by State/UT
-          </text>
-          <text x={margin.left} y={38} fontSize="11" fill="#888">
-            Potential years of life gained if PM2.5 reduced to target levels
-          </text>
-
           {/* Legend */}
-          <g transform={`translate(${width - 280}, 15)`}>
+          <g transform={`translate(${width - 280}, 5)`}>
             <circle cx={0} cy={0} r={5} fill={whoColor} />
             <text x={10} y={4} fontSize="10" fill="#555">WHO Guideline (5 μg/m³)</text>
             <circle cx={150} cy={0} r={5} fill={nationalColor} />
@@ -322,7 +339,7 @@ function LifeExpectancyPlot({ data }) {
               padding: "8px 12px",
               borderRadius: "6px",
               fontSize: "12px",
-              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
               pointerEvents: "none",
               zIndex: 1001,
               whiteSpace: "nowrap",
@@ -402,7 +419,7 @@ function AQIStripPlot({ cityMonthlyData }) {
             zIndex: 1001,
             padding: "5px 10px",
             fontSize: "11px",
-            fontFamily: "Georgia, 'Times New Roman', Times, serif",
+            fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
             background: "#333",
             color: "#fff",
             border: "none",
@@ -422,7 +439,7 @@ function AQIStripPlot({ cityMonthlyData }) {
           </svg>
           SVG
         </button>
-        <svg ref={svgRef} width={width} height={height} style={{ fontFamily: "Georgia, 'Times New Roman', Times, serif" }}>
+        <svg ref={svgRef} width={width} height={height} style={{ fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif" }}>
           {/* Background bands */}
           {bands.map((band) => {
             const y1 = yScale(band.max);
@@ -588,7 +605,7 @@ function AQIStripPlot({ cityMonthlyData }) {
               padding: "6px 10px",
               borderRadius: "4px",
               fontSize: "12px",
-              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
               pointerEvents: "none",
               zIndex: 1001,
               whiteSpace: "nowrap",
@@ -932,7 +949,7 @@ function StateAQICategoryGrid({ stateData }) {
       const x = padding + i * 150;
       return `
         <circle cx="${x + 7}" cy="${headerHeight - 30}" r="7" fill="${cat.color}" stroke="#fff" stroke-width="1"/>
-        <text x="${x + 20}" y="${headerHeight - 26}" font-family="Georgia, 'Times New Roman', Times, serif" font-size="11" fill="#555">${cat.label}</text>
+        <text x="${x + 20}" y="${headerHeight - 26}" font-family="Avenir, 'Avenir Next', Helvetica, Arial, sans-serif" font-size="11" fill="#555">${cat.label}</text>
       `;
     }).join("");
 
@@ -949,7 +966,7 @@ function StateAQICategoryGrid({ stateData }) {
 
       return `
         <g transform="translate(${x}, ${y})">
-          <text x="${cellWidth / 2}" y="25" font-family="Georgia, 'Times New Roman', Times, serif" font-size="12" font-weight="500" fill="#333" text-anchor="middle">${stateName}</text>
+          <text x="${cellWidth / 2}" y="25" font-family="Avenir, 'Avenir Next', Helvetica, Arial, sans-serif" font-size="12" font-weight="500" fill="#333" text-anchor="middle">${stateName}</text>
           <g transform="translate(${(cellWidth - bubbleSize) / 2}, 35)">
             ${bubbles}
           </g>
@@ -962,8 +979,8 @@ function StateAQICategoryGrid({ stateData }) {
   <rect width="${svgWidth}" height="${svgHeight}" fill="#fafafa"/>
 
   <!-- Title -->
-  <text x="${svgWidth / 2}" y="${padding + 20}" font-family="Georgia, 'Times New Roman', Times, serif" font-size="18" font-weight="600" fill="#333" text-anchor="middle">AQI Category Distribution by State</text>
-  <text x="${svgWidth / 2}" y="${padding + 42}" font-family="Georgia, 'Times New Roman', Times, serif" font-size="12" fill="#666" text-anchor="middle">Bubble size represents the number of days in each AQI category during 2024</text>
+  <text x="${svgWidth / 2}" y="${padding + 20}" font-family="Avenir, 'Avenir Next', Helvetica, Arial, sans-serif" font-size="18" font-weight="600" fill="#333" text-anchor="middle">AQI Category Distribution by State</text>
+  <text x="${svgWidth / 2}" y="${padding + 42}" font-family="Avenir, 'Avenir Next', Helvetica, Arial, sans-serif" font-size="12" fill="#666" text-anchor="middle">Bubble size represents the number of days in each AQI category during 2024</text>
 
   <!-- Legend -->
   <g transform="translate(${(svgWidth - 900) / 2}, 0)">
@@ -1061,7 +1078,7 @@ function StateAQICategoryGrid({ stateData }) {
         {/* Title and Download Button */}
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "20px", marginBottom: "8px" }}>
           <h3 style={{
-            fontFamily: "Georgia, 'Times New Roman', Times, serif",
+            fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
             fontSize: "18px",
             fontWeight: "600",
             color: "#333",
@@ -1074,7 +1091,7 @@ function StateAQICategoryGrid({ stateData }) {
             style={{
               padding: "6px 12px",
               fontSize: "12px",
-              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
               background: "#333",
               color: "#fff",
               border: "none",
@@ -1096,7 +1113,7 @@ function StateAQICategoryGrid({ stateData }) {
           </button>
         </div>
         <p style={{
-          fontFamily: "Georgia, 'Times New Roman', Times, serif",
+          fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
           fontSize: "13px",
           color: "#666",
           marginBottom: "30px",
@@ -1124,7 +1141,7 @@ function StateAQICategoryGrid({ stateData }) {
                 boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
               }} />
               <span style={{
-                fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                 fontSize: "11px",
                 color: "#555",
               }}>
@@ -1168,7 +1185,7 @@ function StateAQICategoryGrid({ stateData }) {
             >
               {/* State name */}
               <div style={{
-                fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                 fontSize: "13px",
                 fontWeight: "500",
                 color: "#333",
@@ -1201,7 +1218,7 @@ function StateAQICategoryGrid({ stateData }) {
             padding: "12px 16px",
             borderRadius: "8px",
             fontSize: "12px",
-            fontFamily: "Georgia, 'Times New Roman', Times, serif",
+            fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
             zIndex: 1001,
             minWidth: "200px",
           }}
@@ -1462,7 +1479,7 @@ export default function StateAQIMap() {
               borderRadius: "8px",
               boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
               zIndex: 1000,
-              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
               fontSize: "11px",
             }}
           >

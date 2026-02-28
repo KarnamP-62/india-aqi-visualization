@@ -1991,7 +1991,7 @@ export default function App() {
       >
         <div
           style={{
-            fontFamily: "Georgia, 'Times New Roman', Times, serif",
+            fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
             fontSize: "24px",
             fontWeight: "700",
             color: isActive ? "#333" : "#666",
@@ -2003,6 +2003,7 @@ export default function App() {
 
         <div
           style={{
+            fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
             fontSize: "12px",
             color: "#999",
             marginTop: "22px",
@@ -2060,6 +2061,7 @@ export default function App() {
               >
                 <div
                   style={{
+                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                     fontSize: "12px",
                     color: isSelected ? "#333" : "#666",
                     fontWeight: isSelected ? "600" : "400",
@@ -2129,7 +2131,7 @@ export default function App() {
           cursor: "pointer",
           fontSize: "14px",
           fontWeight: "600",
-          fontFamily: "Georgia, 'Times New Roman', Times, serif",
+          fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
         }}
       >
         ?
@@ -2147,7 +2149,7 @@ export default function App() {
             width: "300px",
             boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
             zIndex: 1000,
-            fontFamily: "Georgia, 'Times New Roman', Times, serif",
+            fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
             textAlign: "left",
           }}
         >
@@ -2216,7 +2218,7 @@ export default function App() {
   );
 
   return (
-    <div style={{ fontFamily: "Georgia, 'Times New Roman', Times, serif" }}>
+    <div style={{ fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif" }}>
       {loading && (
         <div
           style={{
@@ -2234,7 +2236,7 @@ export default function App() {
         >
           <p
             style={{
-              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
               fontSize: "18px",
               color: "#666",
             }}
@@ -2474,7 +2476,7 @@ export default function App() {
               />
               <h2
                 style={{
-                  fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                  fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                   fontSize: "80px",
                   fontWeight: "700",
                   color: "#3a9bb2",
@@ -2509,7 +2511,7 @@ export default function App() {
                 <p
                   style={{
                     fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                    fontSize: "16px",
+                    fontSize: "14px",
                     fontWeight: "400",
                     fontStyle: "italic",
                     color: "#333",
@@ -2551,7 +2553,7 @@ export default function App() {
               />
               <h2
                 style={{
-                  fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                  fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                   fontSize: "80px",
                   fontWeight: "700",
                   color: "#3a9bb2",
@@ -2586,7 +2588,7 @@ export default function App() {
                 <p
                   style={{
                     fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                    fontSize: "16px",
+                    fontSize: "14px",
                     fontWeight: "400",
                     fontStyle: "italic",
                     color: "#333",
@@ -2628,7 +2630,7 @@ export default function App() {
               />
               <h2
                 style={{
-                  fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                  fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                   fontSize: "80px",
                   fontWeight: "700",
                   color: "#3a9bb2",
@@ -2663,7 +2665,7 @@ export default function App() {
                 <p
                   style={{
                     fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                    fontSize: "16px",
+                    fontSize: "14px",
                     fontWeight: "400",
                     fontStyle: "italic",
                     color: "#333",
@@ -2984,12 +2986,12 @@ export default function App() {
             />
             <p
               style={{
-                fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                 fontSize: "22px",
                 fontWeight: "300",
                 color: "#333",
                 textAlign: "left",
-                maxWidth: "800px",
+                maxWidth: "720px",
                 lineHeight: "2.0",
                 margin: 0,
                 marginTop: "-10px",
@@ -3163,6 +3165,7 @@ export default function App() {
                                 y="42"
                                 textAnchor="middle"
                                 fontSize="12"
+                                fontFamily="Avenir, sans-serif"
                                 fontWeight={isHighlighted ? "600" : "400"}
                                 fill={isHighlighted ? "#5699af" : "#6c757d"}
                                 style={{ opacity: getElementOpacity(year) }}
@@ -3214,6 +3217,7 @@ export default function App() {
                                 y={rowHeight + 42}
                                 textAnchor="middle"
                                 fontSize="12"
+                                fontFamily="Avenir, sans-serif"
                                 fontWeight={isHighlighted ? "600" : "400"}
                                 fill={isHighlighted ? "#5699af" : "#6c757d"}
                                 style={{ opacity: getElementOpacity(year) }}
@@ -3265,6 +3269,7 @@ export default function App() {
                                 y={rowHeight*2 + 42}
                                 textAnchor="middle"
                                 fontSize="12"
+                                fontFamily="Avenir, sans-serif"
                                 fontWeight={isHighlighted ? "600" : "400"}
                                 fill={isHighlighted ? "#5699af" : "#6c757d"}
                                 style={{ opacity: getElementOpacity(year) }}
@@ -3316,6 +3321,7 @@ export default function App() {
                                 y={rowHeight*3 + 42}
                                 textAnchor="middle"
                                 fontSize="12"
+                                fontFamily="Avenir, sans-serif"
                                 fontWeight={isHighlighted ? "600" : "400"}
                                 fill={isHighlighted ? "#5699af" : "#6c757d"}
                                 style={{ opacity: getElementOpacity(year) }}
@@ -3367,6 +3373,7 @@ export default function App() {
                                 y={rowHeight*4 + 42}
                                 textAnchor="middle"
                                 fontSize="12"
+                                fontFamily="Avenir, sans-serif"
                                 fontWeight={isHighlighted ? "600" : "400"}
                                 fill={isHighlighted ? "#5699af" : "#6c757d"}
                                 style={{ opacity: getElementOpacity(year) }}
@@ -3458,7 +3465,7 @@ export default function App() {
                     >
                       <div
                         style={{
-                          fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                          fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                           fontSize: "16px",
                           fontWeight: "700",
                           color: "#5699af",
@@ -3469,7 +3476,7 @@ export default function App() {
                       </div>
                       <div
                         style={{
-                          fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                          fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                           fontSize: "12px",
                           fontWeight: "600",
                           color: "#333",
@@ -3480,7 +3487,7 @@ export default function App() {
                       </div>
                       <div
                         style={{
-                          fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                          fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                           fontSize: "12px",
                           fontWeight: "400",
                           color: "#555",
@@ -3519,7 +3526,7 @@ export default function App() {
             />
             <p
               style={{
-                fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                 fontSize: "22px",
                 fontWeight: "300",
                 color: "#333",
@@ -3653,7 +3660,7 @@ export default function App() {
                   >
                     <div
                       style={{
-                        fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                         fontSize: "18px",
                         fontWeight: "700",
                         color: "#3a9bb2",
@@ -3664,7 +3671,7 @@ export default function App() {
                     </div>
                     <div
                       style={{
-                        fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                         fontSize: "14px",
                         color: "#333",
                         marginBottom: "8px",
@@ -3674,7 +3681,7 @@ export default function App() {
                     </div>
                     <div
                       style={{
-                        fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                         fontSize: "13px",
                         color: "#555",
                         lineHeight: "1.6",
@@ -3753,7 +3760,7 @@ export default function App() {
                     onMouseMove={(e) => setCityTooltipPos({ x: e.clientX, y: e.clientY })}
                     onMouseLeave={() => setHoveredCity(null)}
                   />
-                  <text x="476" y="223" textAnchor="middle" fontSize="10" fontFamily="Georgia" fill="#333" style={{ pointerEvents: "none" }}>Byrnihat</text>
+                  <text x="476" y="223" textAnchor="middle" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>Byrnihat</text>
 
                   {/* Delhi (lat: 28.7, lon: 77.1) */}
                   <circle
@@ -3765,7 +3772,7 @@ export default function App() {
                     onMouseMove={(e) => setCityTooltipPos({ x: e.clientX, y: e.clientY })}
                     onMouseLeave={() => setHoveredCity(null)}
                   />
-                  <text x="152" y="175" textAnchor="end" fontSize="10" fontFamily="Georgia" fill="#333" style={{ pointerEvents: "none" }}>Delhi</text>
+                  <text x="152" y="175" textAnchor="end" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>Delhi</text>
 
                   {/* Mullanpur, Punjab (lat: 30.8, lon: 76.7) - Near Chandigarh */}
                   <circle
@@ -3777,7 +3784,7 @@ export default function App() {
                     onMouseMove={(e) => setCityTooltipPos({ x: e.clientX, y: e.clientY })}
                     onMouseLeave={() => setHoveredCity(null)}
                   />
-                  <text x="150" y="128" textAnchor="end" fontSize="10" fontFamily="Georgia" fill="#333" style={{ pointerEvents: "none" }}>Mullanpur</text>
+                  <text x="150" y="128" textAnchor="end" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>Mullanpur</text>
 
                   {/* Faridabad, Haryana (lat: 28.4, lon: 77.3) - South of Delhi */}
                   <circle
@@ -3789,7 +3796,7 @@ export default function App() {
                     onMouseMove={(e) => setCityTooltipPos({ x: e.clientX, y: e.clientY })}
                     onMouseLeave={() => setHoveredCity(null)}
                   />
-                  <text x="216" y="194" textAnchor="start" fontSize="10" fontFamily="Georgia" fill="#333" style={{ pointerEvents: "none" }}>Faridabad</text>
+                  <text x="216" y="194" textAnchor="start" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>Faridabad</text>
 
                   {/* Loni, UP (lat: 28.75, lon: 77.28) - East of Delhi */}
                   <circle
@@ -3801,7 +3808,7 @@ export default function App() {
                     onMouseMove={(e) => setCityTooltipPos({ x: e.clientX, y: e.clientY })}
                     onMouseLeave={() => setHoveredCity(null)}
                   />
-                  <text x="216" y="176" textAnchor="start" fontSize="10" fontFamily="Georgia" fill="#333" style={{ pointerEvents: "none" }}>Loni</text>
+                  <text x="216" y="176" textAnchor="start" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>Loni</text>
 
                   {/* New Delhi (lat: 28.6, lon: 77.2) */}
                   <circle
@@ -3813,7 +3820,7 @@ export default function App() {
                     onMouseMove={(e) => setCityTooltipPos({ x: e.clientX, y: e.clientY })}
                     onMouseLeave={() => setHoveredCity(null)}
                   />
-                  <text x="154" y="200" textAnchor="end" fontSize="10" fontFamily="Georgia" fill="#333" style={{ pointerEvents: "none" }}>New Delhi</text>
+                  <text x="154" y="200" textAnchor="end" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>New Delhi</text>
                 </svg>
 
                 {/* Tooltip showing all 10 most polluted cities */}
@@ -3835,7 +3842,7 @@ export default function App() {
                   >
                     <div
                       style={{
-                        fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                         fontSize: "14px",
                         fontWeight: "700",
                         color: "#3a9bb2",
@@ -3861,7 +3868,7 @@ export default function App() {
                       <div
                         key={item.rank}
                         style={{
-                          fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                          fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                           fontSize: "12px",
                           color: item.city === hoveredCity ? "#3a9bb2" : "#bbb",
                           fontWeight: item.city === hoveredCity ? "700" : "400",
@@ -3909,7 +3916,7 @@ export default function App() {
               >
                 <h2
                   style={{
-                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                     fontSize: "48px",
                     fontWeight: "700",
                     color: "#3a9bb2",
@@ -3955,7 +3962,7 @@ export default function App() {
               >
                 <h2
                   style={{
-                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                     fontSize: "72px",
                     fontWeight: "700",
                     margin: "0 0 20px 0",
@@ -3984,7 +3991,7 @@ export default function App() {
                 </p>
                 <p
                   style={{
-                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                     fontSize: "12px",
                     fontWeight: "400",
                     color: "#888",
@@ -4024,7 +4031,7 @@ export default function App() {
             />
             <p
               style={{
-                fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                 fontSize: "22px",
                 fontWeight: "300",
                 color: "#333",
@@ -4071,7 +4078,7 @@ export default function App() {
               <div>
                 <h2
                   style={{
-                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                     fontSize: "28px",
                     fontWeight: "700",
                     color: "#333",
@@ -4085,7 +4092,7 @@ export default function App() {
                   {/* Sort Tab */}
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <span style={{
-                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       fontSize: "12px",
                       color: "#666",
                     }}>
@@ -4095,7 +4102,7 @@ export default function App() {
                       value={sortOrder}
                       onChange={(e) => handleSortChange(e.target.value)}
                       style={{
-                        fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                         fontSize: "12px",
                         padding: "4px 8px",
                         border: "1px solid #ddd",
@@ -4112,7 +4119,7 @@ export default function App() {
                   {/* View Tab */}
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <span style={{
-                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       fontSize: "12px",
                       color: "#666",
                     }}>
@@ -4124,7 +4131,7 @@ export default function App() {
                         gridSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
                       }}
                       style={{
-                        fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                         fontSize: "12px",
                         padding: "4px 12px",
                         border: "1px solid #ddd",
@@ -4139,7 +4146,7 @@ export default function App() {
                     <button
                       onClick={() => handleViewModeChange("scrollable")}
                       style={{
-                        fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                         fontSize: "12px",
                         padding: "4px 12px",
                         border: "1px solid #ddd",
@@ -4162,7 +4169,7 @@ export default function App() {
                 <div style={{ maxWidth: "350px" }}>
                   <p
                     style={{
-                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       fontSize: "12px",
                       fontWeight: "600",
                       color: "#333",
@@ -4173,7 +4180,7 @@ export default function App() {
                   </p>
                   <p
                     style={{
-                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       fontSize: "11px",
                       color: "#555",
                       lineHeight: "1.5",
@@ -4184,7 +4191,7 @@ export default function App() {
                   </p>
                   <p
                     style={{
-                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       fontSize: "11px",
                       color: "#555",
                       lineHeight: "1.5",
@@ -4297,7 +4304,7 @@ export default function App() {
                     </div>
                     <p
                       style={{
-                        fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                         fontSize: "9px",
                         color: "#333",
                         margin: "12px 0 0 0",
@@ -4339,7 +4346,7 @@ export default function App() {
                   >
                     <p
                       style={{
-                        fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                         fontSize: "14px",
                         fontWeight: "bold",
                         color: "#333",
@@ -4353,7 +4360,7 @@ export default function App() {
                         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
                           <span
                             style={{
-                              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                               fontSize: "12px",
                               color: "#555",
                             }}
@@ -4362,7 +4369,7 @@ export default function App() {
                           </span>
                           <span
                             style={{
-                              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                               fontSize: "14px",
                               fontWeight: "bold",
                               color: categoryInfo.color,
@@ -4374,7 +4381,7 @@ export default function App() {
                         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
                           <span
                             style={{
-                              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                               fontSize: "12px",
                               color: "#555",
                             }}
@@ -4383,7 +4390,7 @@ export default function App() {
                           </span>
                           <span
                             style={{
-                              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                               fontSize: "12px",
                               fontWeight: "bold",
                               color: "white",
@@ -4397,7 +4404,7 @@ export default function App() {
                         </div>
                         <p
                           style={{
-                            fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                            fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                             fontSize: "11px",
                             color: "#666",
                             margin: 0,
@@ -4500,6 +4507,43 @@ export default function App() {
 
           </div>
 
+          {/* Transition Text - Regional AQI Divide */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "flex-start",
+              padding: "60px 20px",
+              marginTop: "80px",
+              background: "#fff",
+            }}
+          >
+            <div
+              style={{
+                width: "6px",
+                height: "80px",
+                backgroundColor: "#5699af",
+                marginRight: "20px",
+                flexShrink: 0,
+              }}
+            />
+            <p
+              style={{
+                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                fontSize: "22px",
+                fontWeight: "300",
+                color: "#333",
+                textAlign: "left",
+                maxWidth: "800px",
+                lineHeight: "2.0",
+                margin: 0,
+                marginTop: "-10px",
+              }}
+            >
+              Across India's landscape, the northern plains consistently grapple with far more severe AQI levels than the southern peninsula, revealing a regional divide in how pollution settles and persists.
+            </p>
+          </div>
+
           {/* AQI vs Population & Weather Scrollytelling Section */}
           <div
             ref={populationTextRef}
@@ -4583,7 +4627,7 @@ export default function App() {
                     justifyContent: "center",
                     gap: "4px",
                     marginTop: "20px",
-                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                     fontSize: "11px",
                   }}
                 >
@@ -4637,7 +4681,7 @@ export default function App() {
             />
             <p
               style={{
-                fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                 fontSize: "22px",
                 fontWeight: "300",
                 color: "#333",
@@ -4648,7 +4692,7 @@ export default function App() {
                 marginTop: "-10px",
               }}
             >
-              The stark contrast in AQI between northern India and the southern peninsula invites a deeper exploration into how geography, climate, and human activity shape the air quality.
+              This stark contrast invites a deeper exploration into how geography, climate, and human activity shape the air quality.
             </p>
           </div>
 
@@ -4678,8 +4722,8 @@ export default function App() {
               <div style={{ marginBottom: "20px" }}>
                 <h3
                   style={{
-                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                    fontSize: "20px",
+                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                    fontSize: "22px",
                     fontWeight: "600",
                     color: "#333",
                     margin: "0 0 8px 0",
@@ -4692,7 +4736,7 @@ export default function App() {
                 </h3>
                 <p
                   style={{
-                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                     fontSize: "14px",
                     fontWeight: "400",
                     color: "#888",
@@ -4713,7 +4757,7 @@ export default function App() {
                   y="390"
                   textAnchor="middle"
                   fontSize="14"
-                  fontFamily="Georgia, serif"
+                  fontFamily="Avenir, sans-serif"
                   fill="#555"
                   style={{ transition: "opacity 0.5s ease" }}
                 >
@@ -4721,7 +4765,7 @@ export default function App() {
                 </text>
 
                 {/* Y-axis label */}
-                <text x="20" y="190" textAnchor="middle" fontSize="14" fontFamily="Georgia, serif" fill="#555" transform="rotate(-90, 20, 190)">
+                <text x="20" y="190" textAnchor="middle" fontSize="14" fontFamily="Avenir, sans-serif" fill="#555" transform="rotate(-90, 20, 190)">
                   Average AQI
                 </text>
 
@@ -4859,7 +4903,7 @@ export default function App() {
                 >
                   <div
                     style={{
-                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       fontSize: "14px",
                       fontWeight: "600",
                       color: "#333",
@@ -4872,7 +4916,7 @@ export default function App() {
                   </div>
                   <div
                     style={{
-                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       fontSize: "12px",
                       color: "#666",
                       marginBottom: "4px",
@@ -4882,7 +4926,7 @@ export default function App() {
                   </div>
                   <div
                     style={{
-                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       fontSize: "12px",
                       color: "#666",
                       marginBottom: "4px",
@@ -4892,7 +4936,7 @@ export default function App() {
                   </div>
                   <div
                     style={{
-                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       fontSize: "12px",
                       color: "#666",
                     }}
@@ -4932,7 +4976,7 @@ export default function App() {
                 >
                   <h3
                     style={{
-                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       fontSize: "22px",
                       fontWeight: "600",
                       color: "#333",
@@ -4944,7 +4988,7 @@ export default function App() {
                   </h3>
                   <p
                     style={{
-                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       fontSize: "15px",
                       lineHeight: "1.8",
                       color: "#555",
@@ -4956,7 +5000,7 @@ export default function App() {
                   </p>
                   <p
                     style={{
-                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       fontSize: "15px",
                       lineHeight: "1.8",
                       color: "#555",
@@ -4967,7 +5011,7 @@ export default function App() {
                   </p>
                   <p
                     style={{
-                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       fontSize: "15px",
                       lineHeight: "1.8",
                       color: "#555",
@@ -5001,7 +5045,7 @@ export default function App() {
                 >
                   <h3
                     style={{
-                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       fontSize: "22px",
                       fontWeight: "600",
                       color: "#333",
@@ -5012,7 +5056,7 @@ export default function App() {
                   </h3>
                   <p
                     style={{
-                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       fontSize: "15px",
                       lineHeight: "1.8",
                       color: "#555",
@@ -5024,7 +5068,7 @@ export default function App() {
                   </p>
                   <p
                     style={{
-                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       fontSize: "15px",
                       lineHeight: "1.8",
                       color: "#555",
@@ -5035,7 +5079,7 @@ export default function App() {
                   </p>
                   <p
                     style={{
-                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       fontSize: "15px",
                       lineHeight: "1.8",
                       color: "#555",
@@ -5056,14 +5100,14 @@ export default function App() {
               background: "#fff",
               maxWidth: "1000px",
               margin: "0 auto",
-              textAlign: "center",
+              textAlign: "left",
             }}
           >
             <h2
               style={{
-                fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                 fontSize: "28px",
-                fontWeight: "600",
+                fontWeight: "700",
                 color: "#333",
                 marginBottom: "50px",
               }}
@@ -5087,12 +5131,14 @@ export default function App() {
             {/* Text placeholder */}
             <p
               style={{
-                fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                fontSize: "18px",
-                lineHeight: "1.8",
+                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                fontSize: "16px",
+                fontWeight: "400",
+                lineHeight: "2.0",
                 color: "#555",
                 maxWidth: "800px",
-                margin: "0 auto",
+                textAlign: "left",
+                margin: 0,
               }}
             >
               The Himalayan mountain range acts as a natural barrier, trapping pollutants in the Indo-Gangetic Plain. Cold air from the mountains pushes pollution back down, while the lack of strong winds prevents dispersion. This geographic phenomenon explains why northern states consistently experience higher pollution levels compared to coastal and peninsular regions.
@@ -5104,18 +5150,18 @@ export default function App() {
             style={{
               padding: "80px 40px",
               background: "#fff",
-              maxWidth: "1200px",
+              maxWidth: "1000px",
               margin: "0 auto",
             }}
           >
             {/* Title */}
             <h2
               style={{
-                fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                fontSize: "24px",
-                fontWeight: "600",
+                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                fontSize: "28px",
+                fontWeight: "700",
                 color: "#333",
-                textAlign: "center",
+                textAlign: "left",
                 marginBottom: "50px",
               }}
             >
@@ -5137,21 +5183,19 @@ export default function App() {
                 margin: 0,
                 textAlign: "left",
                 maxWidth: "900px",
-                marginLeft: "auto",
-                marginRight: "auto",
               }}
             >
               Pollution levels also shift due to seasonal human activities. Summer typically has fewer fire-related emissions, but after the monsoon ends in September, crop burning begins as farmers clear fields for new planting. This practice releases large amounts of smoke and pollutants into the atmosphere, contributing to a sharp decline in air quality during the later months of the year. Forest fires during this period can further intensify pollution, creating hazardous conditions often observed from October through February. Additionally, colder winter temperatures increase the use of heating and cooking fires and trap pollutants closer to the ground, which helps explain the consistently higher pollution levels visible in the visualization during the winter season.
             </p>
             <p
               style={{
-                fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                 fontSize: "12px",
                 fontWeight: "400",
                 color: "#888",
                 lineHeight: "1.5",
-                margin: "30px auto 0 auto",
-                textAlign: "center",
+                margin: "30px 0 0 0",
+                textAlign: "left",
                 maxWidth: "900px",
               }}
             >
@@ -5169,11 +5213,11 @@ export default function App() {
           >
             <h2
               style={{
-                fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                fontSize: "24px",
-                fontWeight: "600",
+                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                fontSize: "28px",
+                fontWeight: "700",
                 color: "#333",
-                textAlign: "center",
+                textAlign: "left",
                 marginBottom: "50px",
               }}
             >
@@ -5189,8 +5233,6 @@ export default function App() {
                 margin: 0,
                 textAlign: "left",
                 maxWidth: "900px",
-                marginLeft: "auto",
-                marginRight: "auto",
               }}
             >
               Air pollutants are commonly classified as primary or secondary depending on how they enter the atmosphere and whether they undergo chemical transformation once released.
@@ -5248,7 +5290,7 @@ export default function App() {
                     onClick={() => setActivePollutantIndex(index)}
                     style={{
                       padding: "8px 16px",
-                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       fontSize: "13px",
                       fontWeight: activePollutantIndex === index ? "600" : "400",
                       color: activePollutantIndex === index ? "#333" : "#888",
@@ -5377,7 +5419,7 @@ export default function App() {
                 >
                   <h5
                     style={{
-                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       fontSize: "14px",
                       fontWeight: "600",
                       color: "#333",
@@ -5410,7 +5452,7 @@ export default function App() {
                           />
                           <span
                             style={{
-                              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                               fontSize: "12px",
                               color: "#555",
                             }}
@@ -5420,7 +5462,7 @@ export default function App() {
                         </div>
                         <span
                           style={{
-                            fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                            fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                             fontSize: "12px",
                             color: "#333",
                             fontWeight: "500",
@@ -5504,8 +5546,8 @@ export default function App() {
                   >
                     <h4
                       style={{
-                        fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                        fontSize: "20px",
+                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                        fontSize: "22px",
                         fontWeight: "600",
                         color: "#333",
                         margin: 0,
@@ -5515,7 +5557,7 @@ export default function App() {
                     </h4>
                     <p
                       style={{
-                        fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                         fontSize: "15px",
                         color: "#555",
                         lineHeight: "1.8",
@@ -5645,7 +5687,7 @@ export default function App() {
                           y={cloud.y + 3}
                           textAnchor="middle"
                           fill="#333"
-                          fontFamily="Georgia, serif"
+                          fontFamily="Avenir, sans-serif"
                           fontSize="10"
                           fontWeight="600"
                         >
@@ -5693,8 +5735,8 @@ export default function App() {
                   >
                     <h4
                       style={{
-                        fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                        fontSize: "20px",
+                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                        fontSize: "22px",
                         fontWeight: "600",
                         color: "#333",
                         margin: 0,
@@ -5704,8 +5746,8 @@ export default function App() {
                     </h4>
                     <p
                       style={{
-                        fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                        fontSize: "14px",
+                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                        fontSize: "15px",
                         color: "#555",
                         lineHeight: "1.8",
                         marginTop: "15px",
@@ -5746,7 +5788,7 @@ export default function App() {
           <p
             style={{
               fontSize: "22px",
-              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
               fontWeight: "300",
               lineHeight: "2.0",
               maxWidth: "800px",
@@ -5773,14 +5815,14 @@ export default function App() {
             style={{
               maxWidth: "900px",
               margin: "0 auto",
-              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
               color: "#333",
             }}
           >
             <h2
               style={{
-                fontSize: "24px",
-                fontWeight: "400",
+                fontSize: "28px",
+                fontWeight: "700",
                 marginBottom: "40px",
                 textAlign: "left",
               }}
@@ -5824,7 +5866,7 @@ export default function App() {
                 />
                 <h3
                   style={{
-                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                     fontSize: "56px",
                     fontWeight: "700",
                     color: "#3a9bb2",
@@ -5858,7 +5900,7 @@ export default function App() {
                   />
                   <p
                     style={{
-                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       fontSize: "14px",
                       fontWeight: "400",
                       fontStyle: "italic",
@@ -5899,7 +5941,7 @@ export default function App() {
                 />
                 <h3
                   style={{
-                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                     fontSize: "56px",
                     fontWeight: "700",
                     color: "#3a9bb2",
@@ -5933,7 +5975,7 @@ export default function App() {
                   />
                   <p
                     style={{
-                      fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       fontSize: "14px",
                       fontWeight: "400",
                       fontStyle: "italic",
@@ -5977,11 +6019,11 @@ export default function App() {
 
       {/* Life Expectancy Gains Visualization */}
       {lifeExpData.length > 0 && (
-        <div>
+        <div style={{ padding: "40px 120px", backgroundColor: "#fff" }}>
           <LifeExpectancyPlot data={lifeExpData} />
           <p
             style={{
-              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
               fontSize: "12px",
               fontWeight: "400",
               color: "#888",
@@ -6011,14 +6053,14 @@ export default function App() {
               maxWidth: "900px",
               margin: "0 auto",
               padding: "0 120px",
-              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
               color: "#333",
             }}
           >
             <h2
               style={{
-                fontSize: "24px",
-                fontWeight: "400",
+                fontSize: "28px",
+                fontWeight: "700",
                 marginBottom: "40px",
                 textAlign: "left",
               }}
@@ -6044,7 +6086,7 @@ export default function App() {
               gridTemplateColumns: "repeat(2, 1fr)",
               gap: "25px",
               padding: "0 40px",
-              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
               maxWidth: "900px",
               margin: "60px auto 0 auto",
               overflow: "hidden",
@@ -6154,12 +6196,12 @@ export default function App() {
           {/* Title inside sticky container */}
           <h2
             style={{
-              fontSize: "24px",
-              fontFamily: "Georgia, 'Times New Roman', Times, serif",
-              fontWeight: "400",
+              fontSize: "28px",
+              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+              fontWeight: "700",
               maxWidth: "900px",
               width: "90%",
-              textAlign: "center",
+              textAlign: "left",
               color: "#333",
               marginBottom: "100px",
             }}
@@ -6191,8 +6233,8 @@ export default function App() {
               <h3
                 style={{
                   fontSize: "20px",
-                  fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                  fontWeight: "500",
+                  fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                  fontWeight: "600",
                   color: "#333",
                   marginBottom: "15px",
                   textAlign: "left",
@@ -6227,8 +6269,8 @@ export default function App() {
               <h3
                 style={{
                   fontSize: "20px",
-                  fontFamily: "Georgia, 'Times New Roman', Times, serif",
-                  fontWeight: "500",
+                  fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                  fontWeight: "600",
                   color: "#333",
                   marginBottom: "15px",
                   textAlign: "left",
@@ -6674,7 +6716,7 @@ export default function App() {
                 bottom: "15px",
                 left: "50%",
                 transform: "translateX(-50%)",
-                fontFamily: "Georgia, serif",
+                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                 fontSize: "12px",
                 color: "#999",
               }}
@@ -6688,7 +6730,7 @@ export default function App() {
             <div
               style={{
                 marginTop: "20px",
-                fontFamily: "Georgia, serif",
+                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                 fontSize: "14px",
                 color: "#999",
               }}
@@ -6711,7 +6753,7 @@ export default function App() {
             style={{
               maxWidth: "900px",
               margin: "0 auto",
-              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
               color: "#333",
             }}
           >
@@ -6765,9 +6807,9 @@ export default function App() {
         >
           <h2
             style={{
-              fontSize: "24px",
-              fontFamily: "Georgia, 'Times New Roman', Times, serif",
-              fontWeight: "500",
+              fontSize: "28px",
+              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+              fontWeight: "700",
               color: "#fff",
               marginBottom: "40px",
               textAlign: "left",
@@ -6780,7 +6822,7 @@ export default function App() {
               display: "grid",
               gridTemplateColumns: "repeat(3, 1fr)",
               gap: "16px",
-              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
             }}
           >
             {[

@@ -69,7 +69,7 @@ export default function MonthlyAQICityChart() {
     });
   }, []);
 
-  const margin = { top: 50, right: 80, bottom: 50, left: 60 };
+  const margin = { top: 20, right: 80, bottom: 50, left: 60 };
   const width = 1100;
   const height = 500;
   const plotW = width - margin.left - margin.right;
@@ -101,11 +101,36 @@ export default function MonthlyAQICityChart() {
 
   return (
     <div style={{ width: "100%", padding: "20px 0", background: "#fff" }}>
-      <div style={{ position: "relative", width: "100%", maxWidth: `${width}px`, margin: "0 auto" }}>
+      <div style={{ position: "relative", width: "100%", maxWidth: `${width}px`, margin: "0" }}>
+        {/* Title and subtitle outside SVG */}
+        <div style={{ marginBottom: "20px", paddingLeft: `${margin.left}px` }}>
+          <h3
+            style={{
+              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+              fontSize: "22px",
+              fontWeight: "600",
+              color: "#333",
+              margin: "0 0 8px 0",
+            }}
+          >
+            Monthly Average AQI by City — 2024
+          </h3>
+          <p
+            style={{
+              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+              fontSize: "14px",
+              fontWeight: "400",
+              color: "#888",
+              margin: "0",
+            }}
+          >
+            Each bar represents a city's monthly average AQI
+          </p>
+        </div>
         <svg
           ref={svgRef}
-          viewBox={`0 0 ${width} ${height}`}
-          style={{ fontFamily: "Georgia, 'Times New Roman', Times, serif", width: "100%", height: "auto" }}
+          viewBox={`0 0 ${width} ${height - 30}`}
+          style={{ fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif", width: "100%", height: "auto" }}
         >
           {/* Category lines and labels */}
           {bands.map((band) => {
@@ -200,24 +225,6 @@ export default function MonthlyAQICityChart() {
             );
           })}
 
-          {/* Title */}
-          <text
-            x={margin.left}
-            y={20}
-            fontSize="14"
-            fontWeight="600"
-            fill="#333"
-          >
-            Monthly Average AQI by City — 2024
-          </text>
-          <text
-            x={margin.left}
-            y={34}
-            fontSize="11"
-            fill="#888"
-          >
-            Each bar represents a city's monthly average AQI
-          </text>
         </svg>
 
         {/* Tooltip */}
@@ -233,7 +240,7 @@ export default function MonthlyAQICityChart() {
               padding: "6px 10px",
               borderRadius: "4px",
               fontSize: "12px",
-              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
               pointerEvents: "none",
               zIndex: 1001,
               whiteSpace: "nowrap",

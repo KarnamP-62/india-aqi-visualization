@@ -122,33 +122,8 @@ function LifeExpectancyPlot({ data }) {
   const nationalColor = "#c1616b"; // Red for National
 
   return (
-    <div style={{ display: "flex", justifyContent: "flex-start", padding: "20px 0", background: "#fff" }}>
+    <div style={{ display: "flex", justifyContent: "center", padding: "20px 0", background: "#fff" }}>
       <div style={{ position: "relative" }}>
-        {/* Title and subtitle outside SVG */}
-        <div style={{ marginBottom: "20px", paddingLeft: `${margin.left}px` }}>
-          <h3
-            style={{
-              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-              fontSize: "22px",
-              fontWeight: "600",
-              color: "#333",
-              margin: "0 0 8px 0",
-            }}
-          >
-            Life Expectancy Gains from Reducing PM2.5 — by State/UT
-          </h3>
-          <p
-            style={{
-              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-              fontSize: "14px",
-              fontWeight: "400",
-              color: "#888",
-              margin: "0",
-            }}
-          >
-            Potential years of life gained if PM2.5 reduced to target levels
-          </p>
-        </div>
         <svg ref={svgRef} width={width} height={height - 30} style={{ fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif" }}>
           {/* Grid lines */}
           {[0, 2, 4, 6, 8, 10].filter(v => v <= maxGain).map((val) => (

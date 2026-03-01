@@ -6020,22 +6020,52 @@ export default function App() {
       {/* Life Expectancy Gains Visualization */}
       {lifeExpData.length > 0 && (
         <div style={{ padding: "40px 120px", backgroundColor: "#fff" }}>
-          <LifeExpectancyPlot data={lifeExpData} />
-          <p
-            style={{
-              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-              fontSize: "12px",
-              fontWeight: "400",
-              color: "#888",
-              lineHeight: "1.5",
-              margin: "20px 0 0 0",
-              textAlign: "center",
-              background: "#fff",
-              paddingBottom: "20px",
-            }}
-          >
-            Source: <a href="https://aqli.epic.uchicago.edu/files/India%20FactSheet_2025_GlobalWV.pdf" target="_blank" rel="noopener noreferrer" style={{ color: "#5699af" }}>AQLI - India Fact Sheet 2025</a>
-          </p>
+          <div style={{ maxWidth: "900px", margin: "0 auto" }}>
+            {/* Title aligned with text above */}
+            <h3
+              style={{
+                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                fontSize: "22px",
+                fontWeight: "600",
+                color: "#333",
+                margin: "0 0 8px 0",
+              }}
+            >
+              Life Expectancy Gains from Reducing PM2.5 — by State/UT
+            </h3>
+            <p
+              style={{
+                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                fontSize: "14px",
+                fontWeight: "400",
+                color: "#888",
+                margin: "0 0 20px 0",
+              }}
+            >
+              Potential years of life gained if PM2.5 reduced to target levels
+            </p>
+          </div>
+          {/* Chart centered */}
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <LifeExpectancyPlot data={lifeExpData} />
+          </div>
+          <div style={{ maxWidth: "900px", margin: "0 auto" }}>
+            <p
+              style={{
+                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                fontSize: "12px",
+                fontWeight: "400",
+                color: "#888",
+                lineHeight: "1.5",
+                margin: "20px 0 0 0",
+                textAlign: "left",
+                background: "#fff",
+                paddingBottom: "20px",
+              }}
+            >
+              Source: <a href="https://aqli.epic.uchicago.edu/files/India%20FactSheet_2025_GlobalWV.pdf" target="_blank" rel="noopener noreferrer" style={{ color: "#5699af" }}>AQLI - India Fact Sheet 2025</a>
+            </p>
+          </div>
         </div>
       )}
 

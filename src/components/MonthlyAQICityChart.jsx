@@ -100,33 +100,8 @@ export default function MonthlyAQICityChart() {
   }
 
   return (
-    <div style={{ width: "100%", padding: "20px 0", background: "#fff" }}>
-      <div style={{ position: "relative", width: "100%", maxWidth: `${width}px`, margin: "0" }}>
-        {/* Title and subtitle outside SVG */}
-        <div style={{ marginBottom: "20px", paddingLeft: `${margin.left}px` }}>
-          <h3
-            style={{
-              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-              fontSize: "22px",
-              fontWeight: "600",
-              color: "#333",
-              margin: "0 0 8px 0",
-            }}
-          >
-            Monthly Average AQI by City — 2024
-          </h3>
-          <p
-            style={{
-              fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-              fontSize: "14px",
-              fontWeight: "400",
-              color: "#888",
-              margin: "0",
-            }}
-          >
-            Each bar represents a city's monthly average AQI
-          </p>
-        </div>
+    <div style={{ width: "100%", padding: "20px 0", background: "#fff", display: "flex", justifyContent: "center" }}>
+      <div style={{ position: "relative", width: "100%", maxWidth: `${width}px` }}>
         <svg
           ref={svgRef}
           viewBox={`0 0 ${width} ${height - 30}`}
@@ -235,22 +210,56 @@ export default function MonthlyAQICityChart() {
               left: tooltip.x,
               top: tooltip.y,
               transform: "translate(-50%, -100%)",
-              background: "rgba(0,0,0,0.85)",
-              color: "#fff",
-              padding: "6px 10px",
-              borderRadius: "4px",
-              fontSize: "12px",
+              backgroundColor: "rgba(255, 255, 255, 0.97)",
+              padding: "12px 16px",
+              borderRadius: "8px",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+              border: "1px solid #e0e0e0",
               fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
               pointerEvents: "none",
               zIndex: 1001,
-              whiteSpace: "nowrap",
+              minWidth: "150px",
             }}
           >
-            <strong>{tooltip.area}</strong>
-            <br />
-            {tooltip.month} — AQI: {tooltip.aqi.toFixed(0)}
-            <br />
-            {getAQIStatus(tooltip.aqi)}
+            <div
+              style={{
+                fontSize: "14px",
+                fontWeight: "600",
+                color: "#333",
+                marginBottom: "8px",
+                borderBottom: "1px solid #eee",
+                paddingBottom: "6px",
+              }}
+            >
+              {tooltip.area}
+            </div>
+            <div
+              style={{
+                fontSize: "12px",
+                color: "#666",
+                marginBottom: "4px",
+              }}
+            >
+              <span style={{ color: "#999" }}>Month:</span> {tooltip.month}
+            </div>
+            <div
+              style={{
+                fontSize: "12px",
+                color: "#666",
+                marginBottom: "4px",
+              }}
+            >
+              <span style={{ color: "#999" }}>AQI:</span> <strong style={{ color: "#333" }}>{tooltip.aqi.toFixed(0)}</strong>
+            </div>
+            <div
+              style={{
+                fontSize: "12px",
+                color: getAQIColorByValue(tooltip.aqi),
+                fontWeight: "500",
+              }}
+            >
+              {getAQIStatus(tooltip.aqi)}
+            </div>
           </div>
         )}
       </div>

@@ -309,24 +309,55 @@ function LifeExpectancyPlot({ data }) {
               left: tooltip.x,
               top: tooltip.y,
               transform: "translate(-50%, -100%)",
-              background: "rgba(0,0,0,0.88)",
-              color: "#fff",
-              padding: "8px 12px",
-              borderRadius: "6px",
-              fontSize: "12px",
+              backgroundColor: "rgba(255, 255, 255, 0.97)",
+              padding: "12px 16px",
+              borderRadius: "8px",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+              border: "1px solid #e0e0e0",
               fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
               pointerEvents: "none",
               zIndex: 1001,
-              whiteSpace: "nowrap",
+              minWidth: "180px",
             }}
           >
-            <strong>{tooltip.state}</strong>
-            <br />
-            <span style={{ color: "#aaa" }}>{tooltip.type}</span>
-            <br />
-            Gain: <strong>{tooltip.value.toFixed(2)} years</strong>
-            <br />
-            <span style={{ color: "#aaa", fontSize: "10px" }}>2023 PM2.5: {tooltip.pm25} μg/m³</span>
+            <div
+              style={{
+                fontSize: "14px",
+                fontWeight: "600",
+                color: "#333",
+                marginBottom: "8px",
+                borderBottom: "1px solid #eee",
+                paddingBottom: "6px",
+              }}
+            >
+              {tooltip.state}
+            </div>
+            <div
+              style={{
+                fontSize: "12px",
+                color: "#666",
+                marginBottom: "4px",
+              }}
+            >
+              <span style={{ color: "#999" }}>{tooltip.type}</span>
+            </div>
+            <div
+              style={{
+                fontSize: "12px",
+                color: "#666",
+                marginBottom: "4px",
+              }}
+            >
+              <span style={{ color: "#999" }}>Gain:</span> <strong style={{ color: "#333" }}>{tooltip.value.toFixed(2)} years</strong>
+            </div>
+            <div
+              style={{
+                fontSize: "11px",
+                color: "#999",
+              }}
+            >
+              2023 PM2.5: {tooltip.pm25} μg/m³
+            </div>
           </div>
         )}
       </div>
@@ -575,22 +606,56 @@ function AQIStripPlot({ cityMonthlyData }) {
               left: tooltip.x,
               top: tooltip.y,
               transform: "translate(-50%, -100%)",
-              background: "rgba(0,0,0,0.85)",
-              color: "#fff",
-              padding: "6px 10px",
-              borderRadius: "4px",
-              fontSize: "12px",
+              backgroundColor: "rgba(255, 255, 255, 0.97)",
+              padding: "12px 16px",
+              borderRadius: "8px",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+              border: "1px solid #e0e0e0",
               fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
               pointerEvents: "none",
               zIndex: 1001,
-              whiteSpace: "nowrap",
+              minWidth: "150px",
             }}
           >
-            <strong>{tooltip.area}</strong>
-            <br />
-            {tooltip.month} — AQI: {tooltip.aqi.toFixed(0)}
-            <br />
-            {getAQIStatus(tooltip.aqi)}
+            <div
+              style={{
+                fontSize: "14px",
+                fontWeight: "600",
+                color: "#333",
+                marginBottom: "8px",
+                borderBottom: "1px solid #eee",
+                paddingBottom: "6px",
+              }}
+            >
+              {tooltip.area}
+            </div>
+            <div
+              style={{
+                fontSize: "12px",
+                color: "#666",
+                marginBottom: "4px",
+              }}
+            >
+              <span style={{ color: "#999" }}>Month:</span> {tooltip.month}
+            </div>
+            <div
+              style={{
+                fontSize: "12px",
+                color: "#666",
+                marginBottom: "4px",
+              }}
+            >
+              <span style={{ color: "#999" }}>AQI:</span> <strong style={{ color: "#333" }}>{tooltip.aqi.toFixed(0)}</strong>
+            </div>
+            <div
+              style={{
+                fontSize: "12px",
+                color: getAQIColorByValue(tooltip.aqi),
+                fontWeight: "500",
+              }}
+            >
+              {getAQIStatus(tooltip.aqi)}
+            </div>
           </div>
         )}
       </div>

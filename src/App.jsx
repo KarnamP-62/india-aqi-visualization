@@ -3912,37 +3912,46 @@ export default function App() {
                   paddingBottom: "20vh",
                   opacity: activeMapIndex === 0 ? 1 : 0.3,
                   transition: "opacity 0.4s ease-out",
+                  paddingLeft: "60px",
                 }}
               >
-                <h2
+                <div
                   style={{
-                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                    fontSize: "48px",
-                    fontWeight: "700",
-                    color: "#3a9bb2",
-                    margin: "0 0 20px 0",
-                    letterSpacing: "2px",
-                    paddingLeft: 50,
-                    textAlign: "left",
+                    maxWidth: "450px",
+                    padding: "30px",
+                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                    borderLeft: "4px solid #5699af",
                   }}
                 >
-                  DELHI
-                </h2>
-                <p
-                  style={{
-                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                    fontSize: "16px",
-                    fontWeight: "400",
-                    color: "#333",
-                    lineHeight: "2.0",
-                    margin: "0",
-                    paddingLeft: 50,
-                    maxWidth: "400px",
-                    textAlign: "left",
-                  }}
-                >
-                has the poorest air quality among capital cities globally, with concentrations of particulate matter (PM2.5) nearly 10 times higher than the World Health Organization guidelines.
-                </p>
+                  <h2
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "48px",
+                      fontWeight: "700",
+                      color: "#3a9bb2",
+                      margin: "0 0 20px 0",
+                      letterSpacing: "2px",
+                      textAlign: "left",
+                    }}
+                  >
+                    DELHI
+                  </h2>
+                  <p
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "16px",
+                      fontWeight: "400",
+                      color: "#333",
+                      lineHeight: "2.0",
+                      margin: "0",
+                      textAlign: "left",
+                    }}
+                  >
+                  has the poorest air quality among capital cities globally, with concentrations of particulate matter (PM2.5) nearly 10 times higher than the World Health Organization guidelines.
+                  </p>
+                </div>
               </div>
 
               {/* Six Cities text section */}
@@ -3958,52 +3967,59 @@ export default function App() {
                   paddingBottom: "20vh",
                   opacity: activeMapIndex === 1 ? 1 : 0.3,
                   transition: "opacity 0.4s ease-out",
+                  paddingLeft: "60px",
                 }}
               >
-                <h2
+                <div
                   style={{
-                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                    fontSize: "72px",
-                    fontWeight: "700",
-                    margin: "0 0 20px 0",
-                    paddingLeft: 50,
-                    textAlign: "left",
-                    lineHeight: "1.1",
+                    maxWidth: "450px",
+                    padding: "30px",
+                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                    borderLeft: "4px solid #5699af",
                   }}
                 >
-                  <span style={{ color: "#3a9bb2" }}>6</span>
-                  <span style={{ color: "#444" }}> out of 10</span>
-                </h2>
-                <p
-                  style={{
-                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                    fontSize: "16px",
-                    fontWeight: "400",
-                    color: "#555",
-                    lineHeight: "2.0",
-                    margin: "0",
-                    paddingLeft: 50,
-                    maxWidth: "400px",
-                    textAlign: "left",
-                  }}
-                >
-                  most polluted cities of 2024 in the world are in India.
-                </p>
-                <p
-                  style={{
-                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                    fontSize: "12px",
-                    fontWeight: "400",
-                    color: "#888",
-                    lineHeight: "1.5",
-                    margin: "20px 0 0 0",
-                    paddingLeft: 50,
-                    maxWidth: "400px",
-                    textAlign: "left",
-                  }}
-                >
-                  Source: <a href="https://www.iqair.com/world-most-polluted-cities" target="_blank" rel="noopener noreferrer" style={{ color: "#5699af" }}>IQAir - World Most Polluted Cities</a>
-                </p>
+                  <h2
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "72px",
+                      fontWeight: "700",
+                      margin: "0 0 20px 0",
+                      textAlign: "left",
+                      lineHeight: "1.1",
+                    }}
+                  >
+                    <span style={{ color: "#3a9bb2" }}>6</span>
+                    <span style={{ color: "#444" }}> out of 10</span>
+                  </h2>
+                  <p
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "16px",
+                      fontWeight: "400",
+                      color: "#555",
+                      lineHeight: "2.0",
+                      margin: "0",
+                      textAlign: "left",
+                    }}
+                  >
+                    most polluted cities of 2024 in the world are in India.
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "12px",
+                      fontWeight: "400",
+                      color: "#888",
+                      lineHeight: "1.5",
+                      margin: "20px 0 0 0",
+                      textAlign: "left",
+                    }}
+                  >
+                    Source: <a href="https://www.iqair.com/world-most-polluted-cities" target="_blank" rel="noopener noreferrer" style={{ color: "#5699af" }}>IQAir - World Most Polluted Cities</a>
+                  </p>
+                </div>
               </div>
 
             </div>
@@ -4572,12 +4588,14 @@ export default function App() {
               <div
                 style={{
                   position: "absolute",
+                  left: "50%",
+                  transform: "translateX(-50%)",
                   display: activePopRainfallIndex === 0 ? "block" : "none",
                   opacity: mapMorphProgress >= 0.5 ? 1 : 0,
                   transition: "opacity 0.3s ease",
                 }}
               >
-                <div style={{ position: "relative", width: "700px", height: "750px" }}>
+                <div style={{ position: "relative", width: "700px", height: "750px", display: "flex", flexDirection: "column", alignItems: "center" }}>
                   <object
                     ref={populationMapRef}
                     data="/india-states.svg"
@@ -4723,8 +4741,8 @@ export default function App() {
                 <h3
                   style={{
                     fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                    fontSize: "22px",
-                    fontWeight: "600",
+                    fontSize: "20px",
+                    fontWeight: "500",
                     color: "#333",
                     margin: "0 0 8px 0",
                     transition: "opacity 0.3s ease",
@@ -4977,8 +4995,8 @@ export default function App() {
                   <h3
                     style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "22px",
-                      fontWeight: "600",
+                      fontSize: "20px",
+                      fontWeight: "500",
                       color: "#333",
                       marginBottom: "20px",
                       margin: 0,
@@ -5040,14 +5058,14 @@ export default function App() {
                     backgroundColor: "rgba(255, 255, 255, 0.95)",
                     borderRadius: "8px",
                     boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                    borderLeft: "4px solid #87beb1",
+                    borderLeft: "4px solid #5699af",
                   }}
                 >
                   <h3
                     style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "22px",
-                      fontWeight: "600",
+                      fontSize: "20px",
+                      fontWeight: "500",
                       color: "#333",
                       margin: 0,
                     }}
@@ -5170,6 +5188,29 @@ export default function App() {
 
             {/* Monthly AQI Chart */}
             <div style={{ marginBottom: "50px" }}>
+              {/* Title aligned with section heading */}
+              <h3
+                style={{
+                  fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                  fontSize: "20px",
+                  fontWeight: "500",
+                  color: "#333",
+                  margin: "0 0 8px 0",
+                }}
+              >
+                Monthly Average AQI by City — 2024
+              </h3>
+              <p
+                style={{
+                  fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                  fontSize: "14px",
+                  fontWeight: "400",
+                  color: "#888",
+                  margin: "0 0 20px 0",
+                }}
+              >
+                Each bar represents a city's monthly average AQI
+              </p>
               <MonthlyAQICityChart />
             </div>
 
@@ -5547,8 +5588,8 @@ export default function App() {
                     <h4
                       style={{
                         fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                        fontSize: "22px",
-                        fontWeight: "600",
+                        fontSize: "20px",
+                        fontWeight: "500",
                         color: "#333",
                         margin: 0,
                       }}
@@ -5707,6 +5748,7 @@ export default function App() {
                 display: "flex",
                 flexDirection: "column",
                 paddingBottom: "80vh",
+                paddingLeft: "60px",
               }}
             >
               {pollutionSources.map((source, index) => (
@@ -5727,7 +5769,7 @@ export default function App() {
                       backgroundColor: "#fff",
                       borderRadius: "8px",
                       boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                      border: "1px solid #eee",
+                      borderLeft: "4px solid #5699af",
                       opacity: visibleSources > index ? 1 : 0.3,
                       transform: visibleSources > index ? "translateX(0)" : "translateX(20px)",
                       transition: "all 0.5s ease-out",
@@ -5736,8 +5778,8 @@ export default function App() {
                     <h4
                       style={{
                         fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                        fontSize: "22px",
-                        fontWeight: "600",
+                        fontSize: "20px",
+                        fontWeight: "500",
                         color: "#333",
                         margin: 0,
                       }}
@@ -6025,8 +6067,8 @@ export default function App() {
             <h3
               style={{
                 fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                fontSize: "22px",
-                fontWeight: "600",
+                fontSize: "20px",
+                fontWeight: "500",
                 color: "#333",
                 margin: "0 0 8px 0",
               }}
@@ -6264,7 +6306,7 @@ export default function App() {
                 style={{
                   fontSize: "20px",
                   fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                  fontWeight: "600",
+                  fontWeight: "500",
                   color: "#333",
                   marginBottom: "15px",
                   textAlign: "left",
@@ -6300,7 +6342,7 @@ export default function App() {
                 style={{
                   fontSize: "20px",
                   fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                  fontWeight: "600",
+                  fontWeight: "500",
                   color: "#333",
                   marginBottom: "15px",
                   textAlign: "left",
@@ -6915,27 +6957,71 @@ export default function App() {
             position: "fixed",
             left: tooltip.x + 8,
             top: tooltip.y + 8,
-            backgroundColor: tooltip.color,
-            color: "#000",
-            padding: "5px 5px",
-            borderRadius: "2px",
-            fontSize: "12px",
-            fontWeight: "300",
+            backgroundColor: "rgba(255, 255, 255, 0.97)",
+            padding: "12px 16px",
+            borderRadius: "8px",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+            border: "1px solid #e0e0e0",
+            fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
             pointerEvents: "none",
             zIndex: 1000,
-            lineHeight: "2.0",
+            minWidth: "180px",
           }}
         >
           {tooltip.state && (
-            <div style={{ fontWeight: "700", marginBottom: "6px" }}>
+            <div
+              style={{
+                fontSize: "14px",
+                fontWeight: "600",
+                color: "#333",
+                marginBottom: "8px",
+                borderBottom: "1px solid #eee",
+                paddingBottom: "6px",
+              }}
+            >
               {tooltip.state}
             </div>
           )}
-          <div>
-            {tooltip.date} {tooltip.state && "•"} AQI: {tooltip.aqiValue} {tooltip.state && `• ${tooltip.status}`}
+          <div
+            style={{
+              fontSize: "12px",
+              color: "#666",
+              marginBottom: "4px",
+            }}
+          >
+            <span style={{ color: "#999" }}>Date:</span> {tooltip.date}
           </div>
+          <div
+            style={{
+              fontSize: "12px",
+              color: "#666",
+              marginBottom: "4px",
+            }}
+          >
+            <span style={{ color: "#999" }}>AQI:</span> <strong style={{ color: "#333" }}>{tooltip.aqiValue}</strong>
+          </div>
+          {tooltip.status && (
+            <div
+              style={{
+                fontSize: "12px",
+                color: tooltip.color,
+                fontWeight: "500",
+                marginBottom: "4px",
+              }}
+            >
+              {tooltip.status}
+            </div>
+          )}
           {tooltip.pollutants && (
-            <div style={{ fontSize: "12px", marginTop: "4px", opacity: 0.8 }}>
+            <div
+              style={{
+                fontSize: "11px",
+                color: "#999",
+                marginTop: "4px",
+                paddingTop: "4px",
+                borderTop: "1px solid #eee",
+              }}
+            >
               Pollutants: {tooltip.pollutants}
             </div>
           )}

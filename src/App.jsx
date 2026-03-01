@@ -242,7 +242,7 @@ export default function App() {
     },
     2024: {
       title: "Expanding Monitoring Stations",
-      description: "In 2024, India continued to expand its air quality monitoring network to improve real-time air pollution data and policy response. Under the National Clean Air Programme (NCAP), the number of Continuous Ambient Air Quality Monitoring Stations (CAAQMS) increased, with new stations added across states such as Tamil Nadu and West Bengal, raising the total from 551 to 559 and expanding coverage to more cities.",
+      description: "In 2024, India expanded its air quality monitoring under the National Clean Air Programme (NCAP), increasing Continuous Ambient Air Quality Monitoring Stations from 551 to 559, with new stations added in states like Tamil Nadu and West Bengal to strengthen real-time pollution tracking and policy response.",
       row: 5,
       index: 4
     }
@@ -2427,14 +2427,12 @@ export default function App() {
             }}
           >
             <p>
-              India is confronting a deepening air quality crisis. In 2024, the country ranked as the third most polluted nation globally, following Bangladesh and Pakistan, according to AQI.in. With an average AQI of 111, millions of people were exposed to unhealthy air for much of the year. Several Indian cities repeatedly appeared among the world's most polluted urban areas, underscoring the scale and persistence of the problem. New Delhi, the nation's capital, consistently recorded some of the highest pollution levels worldwide, placing it among the most polluted capital cities on the planet.
-            </p>
+            India is confronting an uncomfortable truth: bad air is not an exception, but a daily reality. In 2024, the country ranked as the third most polluted nation globally, following Bangladesh and Pakistan, with an average AQI of 111. For millions, breathing unhealthy air was not a seasonal anomaly, it was routine. Several Indian cities repeatedly appeared among the world’s most polluted urban centers, and New Delhi consistently ranked among the most polluted capital cities on the planet.
+             </p>
             <p style={{ marginTop: "10px" }}>
-              This crisis is closely tied to India's rapid urbanization and energy choices. As the third-largest emitter of greenhouse gases globally, the country relies heavily on fossil fuels to power its growing cities, industries, and transportation networks. While greenhouse gases drive long-term climate change, many of the same activities—coal-based power generation, vehicular traffic, and industrial production—also release pollutants that directly degrade the air people breathe every day.
-            </p>
+              Another hard truth lies beneath these numbers. India’s rapid urbanization and heavy reliance on fossil fuels powering its expanding cities, industries, and transport systems have tied economic growth to environmental cost. The same coal plants, vehicles, and factories driving development also release the pollutants that fill the air with harmful particulate matter each day.  </p>
             <p style={{ marginTop: "10px" }}>
-              Home to one of the world's largest and densest populations, India faces unique pressures. Rising energy demand, expanding transportation systems, and accelerating urban growth have intensified emissions, while the increasing number of vehicles has made pollution control even more challenging. These pressures are compounded by slow transitions to clean energy, uneven infrastructure development, and weak enforcement of environmental regulations. This story examines how air pollution in India varies across space and time, and what these patterns reveal about public health, environmental inequality, and the systems that shape the air millions inhale daily.
-            </p>
+             And perhaps the deepest truth is this: in a nation home to one of the world’s largest and densest populations, the pressures are immense. Rising energy demand, growing vehicle ownership, and expanding infrastructure have intensified emissions, while transitions to cleaner systems remain uneven and slow. Air pollution in India is not just an environmental statistic, it is a structural condition shaped by policy, geography, inequality, and the systems that determine what millions breathe every single day.     </p>
           </div>
 
           {/* KPI Sections - 3 columns */}
@@ -2866,7 +2864,7 @@ export default function App() {
                     textAlign: "left",
                   }}
                 >
-                Over the past three decades, Byrnihat has transformed from a small settlement into a major industrial hub. This town of roughly 50,000 residents hosts around 80 industries, many centered on iron and steel production. Its winding roads are crowded with long lines of trucks — some idling, others transporting materials to and from factories.Today, it carries the unwanted distinction of being ranked the world’s most polluted city by a Swiss air quality monitoring agency.   </p>
+                Over the past three decades, Byrnihat has transformed from a small settlement into a major industrial hub. This town of roughly 50,000 residents hosts around 80 industries, many centered on iron and steel production. Its winding roads are crowded with long lines of trucks  some idling, others transporting materials to and from factories.Today, it carries the unwanted distinction of being ranked the world’s most polluted city by a Swiss air quality monitoring agency.   </p>
               </div>
             </div>
 
@@ -2890,7 +2888,7 @@ export default function App() {
                     textAlign: "right",
                   }}
                 >
-                 Diwali is one of India's most widely celebrated festivals, yet it is also a time when air pollution levels rise sharply due to the widespread use of firecrackers. During these days, the air becomes visibly hazy and physically difficult to breathe. Despite increasing awareness about the environmental impact, large-scale adoption of a truly "green Diwali" remains limited. In 2024, Delhi alone recorded AQI levels as high as 550 during Diwali—falling into the severe to hazardous category—highlighting the urgent need for more sustainable ways to celebrate.
+                 Diwali is one of India's most widely celebrated festivals, yet it is also a time when air pollution levels rise sharply due to the widespread use of firecrackers. During these days, the air becomes visibly hazy and physically difficult to breathe. Despite increasing awareness about the environmental impact, large-scale adoption of a truly "green Diwali" remains limited. In 2024, Delhi alone recorded AQI levels as high as 550 during Diwali falling into the severe to hazardous category highlighting the urgent need for more sustainable ways to celebrate.
                      </p>
               </div>
               {/* Dot on timeline */}
@@ -3951,7 +3949,7 @@ export default function App() {
                       textAlign: "left",
                     }}
                   >
-                  has the poorest air quality among capital cities globally, with concentrations of particulate matter (PM2.5) nearly 10 times higher than the World Health Organization guidelines.
+                  had the poorest air quality, in 2024 among capital cities globally, with concentrations of particulate matter (PM2.5) nearly 10 times higher than the World Health Organization guidelines.
                   </p>
                 </div>
               </div>
@@ -4103,7 +4101,7 @@ export default function App() {
                     margin: "0 0 15px 0",
                   }}
                 >
-                  AQI by category and states
+                  AQI Across states and Union Territories
                 </h2>
                 {/* Tabs */}
                 <div style={{ display: "flex", gap: "30px" }}>
@@ -4184,7 +4182,7 @@ export default function App() {
               {/* Right - India map with How to read section */}
               <div style={{ display: "flex", alignItems: "flex-start", gap: "20px" }}>
                 {/* How to read section */}
-                <div style={{ maxWidth: "350px" }}>
+                <div style={{ maxWidth: "520px" }}>
                   <p
                     style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
@@ -4205,7 +4203,7 @@ export default function App() {
                       margin: "0 0 6px 0",
                     }}
                   >
-                    Each circular visualization represents a State or Union Territory of India. Within each circle, every line corresponds to a single day of 2024. The length of the spikes indicates the severity of air pollution.
+                    Each circular graphic represents a State or Union Territory of India. Within every circle, each line marks a single day of 2024, arranged clockwise across the year. The spikes within the circle show the intensity of air pollution—the longer the spike, the worse the AQI on that day.
                   </p>
                   <p
                     style={{
@@ -4213,12 +4211,10 @@ export default function App() {
                       fontSize: "11px",
                       color: "#555",
                       lineHeight: "1.5",
-                      margin: "0",
+                      margin: "0 0 6px 0",
                     }}
                   >
-                    Colors indicate AQI levels: blue (good) to pink/red (severe).
-                    <br />
-                    <a href="https://www.kaggle.com/datasets/bhadramohit/india-air-quality-index2024-dataset" target="_blank" rel="noopener noreferrer" style={{ color: "#5699af" }}>Source: Kaggle</a>
+                    Colors indicate AQI levels: <span style={{ color: "#5699af", fontWeight: "600" }}>Good</span>, <span style={{ color: "#87beb1", fontWeight: "600" }}>Satisfactory</span>, <span style={{ color: "#dfbfc6", fontWeight: "600" }}>Moderate</span>, <span style={{ color: "#de9eaf", fontWeight: "600" }}>Poor</span>, <span style={{ color: "#e07192", fontWeight: "600" }}>Very Poor</span>, <span style={{ color: "#c1616b", fontWeight: "600" }}>Severe</span>, <span style={{ color: "#ccc", fontWeight: "600" }}>No Data</span>. Hover over any circle to view more detailed information, and click to explore a closer, in-depth view. The scrollable sections also guide you through expanded insights and deeper analysis. (<a href="https://www.kaggle.com/datasets/bhadramohit/india-air-quality-index2024-dataset" target="_blank" rel="noopener noreferrer" style={{ color: "#5699af" }}>Source: Kaggle</a>)
                   </p>
                 </div>
 
@@ -4895,8 +4891,8 @@ export default function App() {
                   }}
                 >
                   {activeScatterIndex === 0
-                    ? "Correlation Mapping of Average Annual AQI vs Population"
-                    : "Correlation Mapping of Average Annual AQI vs Rainfall"}
+                    ? "Correlation Mapping of Average Annual AQI vs Population - 2024"
+                    : "Correlation Mapping of Average Annual AQI vs Rainfall - 2024"}
                 </h3>
                 <p
                   style={{

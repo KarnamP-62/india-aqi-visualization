@@ -48,10 +48,12 @@ export default function App() {
   const [viewMode, setViewMode] = useState("overview"); // "overview" or "scrollable"
   const [isViewTransitioning, setIsViewTransitioning] = useState(false); // track view mode transition
   const [mapMorphProgress, setMapMorphProgress] = useState(0); // 0-1 for map morph transition
-  const [activeScatterIndex, setActiveScatterIndex] = useState(0); // 0 = Population, 1 = Rainfall
+  const [activeScatterIndex, setActiveScatterIndex] = useState(0); // 0 = Population, 1 = Rainfall, 2 = Geography
   const scatterTextRefs = useRef([]); // refs for scatter plot text sections
   const [hoveredScatterPoint, setHoveredScatterPoint] = useState(null); // hovered point in scatter plot
   const [scatterTooltipPos, setScatterTooltipPos] = useState({ x: 0, y: 0 }); // tooltip position for scatter plot
+  const [hoveredAQIMapState, setHoveredAQIMapState] = useState(null); // hovered state in AQI choropleth map
+  const [aqiMapTooltipPos, setAqiMapTooltipPos] = useState({ x: 0, y: 0 }); // tooltip position for AQI map
 
   // Handler for smooth view mode transition
   const handleViewModeChange = (newMode, scrollToIndex = null) => {
@@ -4602,7 +4604,7 @@ export default function App() {
                     type="image/svg+xml"
                     width="700"
                     height="750"
-                    style={{ pointerEvents: "none" }}
+                    style={{ pointerEvents: "auto" }}
                     onLoad={() => {
                       if (populationMapRef.current && stateData.length > 0) {
                         const svgDoc = populationMapRef.current.contentDocument;
@@ -4616,17 +4618,67 @@ export default function App() {
                             if (stateAQIData && stateAQIData.avgAQI) {
                               const aqi = stateAQIData.avgAQI;
                               let color;
-                              if (aqi <= 50) color = "#5699af";
-                              else if (aqi <= 100) color = "#87beb1";
-                              else if (aqi <= 200) color = "#dfbfc6";
-                              else if (aqi <= 300) color = "#de9eaf";
-                              else if (aqi <= 400) color = "#e07192";
-                              else color = "#c1616b";
+                              let category;
+                              let description;
+                              if (aqi <= 50) {
+                                color = "#5699af";
+                                category = "Good";
+                                description = "Minimal impact on health";
+                              } else if (aqi <= 100) {
+                                color = "#87beb1";
+                                category = "Satisfactory";
+                                description = "Minor breathing discomfort for sensitive people";
+                              } else if (aqi <= 200) {
+                                color = "#dfbfc6";
+                                category = "Moderate";
+                                description = "Breathing discomfort for people with lung/heart disease";
+                              } else if (aqi <= 300) {
+                                color = "#de9eaf";
+                                category = "Poor";
+                                description = "Breathing discomfort for most people on prolonged exposure";
+                              } else if (aqi <= 400) {
+                                color = "#e07192";
+                                category = "Very Poor";
+                                description = "Respiratory illness on prolonged exposure";
+                              } else {
+                                color = "#c1616b";
+                                category = "Severe";
+                                description = "Affects healthy people and seriously impacts those with existing diseases";
+                              }
 
                               path.style.fill = color;
                               path.style.fillOpacity = "0.7";
                               path.style.stroke = "#fff";
                               path.style.strokeWidth = "0.5";
+                              path.style.cursor = "pointer";
+                              path.style.transition = "fill-opacity 0.2s ease";
+
+                              // Store data on the path for tooltip
+                              path.dataset.aqi = Math.round(aqi);
+                              path.dataset.category = category;
+                              path.dataset.description = description;
+                              path.dataset.color = color;
+
+                              path.addEventListener("mouseenter", (e) => {
+                                path.style.fillOpacity = "1";
+                                setHoveredAQIMapState({
+                                  name: stateName,
+                                  aqi: path.dataset.aqi,
+                                  category: path.dataset.category,
+                                  description: path.dataset.description,
+                                  color: path.dataset.color,
+                                });
+                                setAqiMapTooltipPos({ x: e.clientX, y: e.clientY });
+                              });
+
+                              path.addEventListener("mousemove", (e) => {
+                                setAqiMapTooltipPos({ x: e.clientX, y: e.clientY });
+                              });
+
+                              path.addEventListener("mouseleave", () => {
+                                path.style.fillOpacity = "0.7";
+                                setHoveredAQIMapState(null);
+                              });
                             } else {
                               path.style.fill = "#f0f0f0";
                               path.style.stroke = "#ccc";
@@ -4673,6 +4725,72 @@ export default function App() {
                   ))}
                 </div>
               </div>
+
+              {/* AQI Map Tooltip */}
+              {hoveredAQIMapState && (
+                <div
+                  style={{
+                    position: "fixed",
+                    left: aqiMapTooltipPos.x + 15,
+                    top: aqiMapTooltipPos.y - 10,
+                    backgroundColor: "rgba(255, 255, 255, 0.97)",
+                    padding: "12px 16px",
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+                    pointerEvents: "none",
+                    zIndex: 1000,
+                    minWidth: "200px",
+                    maxWidth: "280px",
+                    border: "1px solid #e0e0e0",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      color: "#333",
+                      marginBottom: "8px",
+                      borderBottom: "1px solid #eee",
+                      paddingBottom: "6px",
+                    }}
+                  >
+                    {hoveredAQIMapState.name}
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "12px",
+                      color: "#666",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    <span style={{ color: "#999" }}>Annual Avg AQI:</span>{" "}
+                    <strong style={{ color: "#333" }}>{hoveredAQIMapState.aqi}</strong>
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "12px",
+                      color: hoveredAQIMapState.color,
+                      fontWeight: "500",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    {hoveredAQIMapState.category}
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "11px",
+                      color: "#888",
+                      lineHeight: "1.4",
+                    }}
+                  >
+                    {hoveredAQIMapState.description}
+                  </div>
+                </div>
+              )}
 
             </div>
           </div>
@@ -4736,8 +4854,36 @@ export default function App() {
                 padding: "40px 20px 20px 60px",
               }}
             >
-              {/* Title and Subtitle */}
-              <div style={{ marginBottom: "20px" }}>
+              {/* Tabs for Population, Climate, Geography */}
+              <div style={{ display: "flex", gap: "4px", marginBottom: "16px" }}>
+                {[
+                  { name: "Population", index: 0, color: "#5699af" },
+                  { name: "Climate", index: 1, color: "#5699af" },
+                  { name: "Geography", index: 2, color: "#5699af" },
+                ].map((tab) => (
+                  <button
+                    key={tab.index}
+                    onClick={() => setActiveScatterIndex(tab.index)}
+                    style={{
+                      padding: "8px 16px",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "13px",
+                      fontWeight: activeScatterIndex === tab.index ? "600" : "400",
+                      color: activeScatterIndex === tab.index ? "#333" : "#888",
+                      backgroundColor: activeScatterIndex === tab.index ? "#fff" : "transparent",
+                      border: "none",
+                      borderBottom: activeScatterIndex === tab.index ? `3px solid ${tab.color}` : "3px solid transparent",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    {tab.name}
+                  </button>
+                ))}
+              </div>
+
+              {/* Title and Subtitle - hidden for Geography */}
+              <div style={{ marginBottom: "20px", opacity: activeScatterIndex === 2 ? 0 : 1, transition: "opacity 0.4s ease" }}>
                 <h3
                   style={{
                     fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
@@ -4764,6 +4910,15 @@ export default function App() {
                   Each dot represents a state or UT, hover for more info
                 </p>
               </div>
+
+              {/* Scatter Plot - hidden when Geography is active */}
+              <div style={{
+                opacity: activeScatterIndex === 2 ? 0 : 1,
+                transform: activeScatterIndex === 2 ? "scale(0.95)" : "scale(1)",
+                transition: "opacity 0.5s ease, transform 0.5s ease",
+                position: activeScatterIndex === 2 ? "absolute" : "relative",
+                pointerEvents: activeScatterIndex === 2 ? "none" : "auto",
+              }}>
               <svg width="600" height="480" viewBox="0 0 500 400" style={{ overflow: "visible" }}>
                 {/* Axes */}
                 <line x1="60" y1="350" x2="480" y2="350" stroke="#ccc" strokeWidth="1" />
@@ -4884,6 +5039,9 @@ export default function App() {
                       }}
                       onMouseEnter={(e) => {
                         const rect = e.target.ownerSVGElement.getBoundingClientRect();
+                        // Scale factor: rendered size / viewBox size (600/500 = 1.2, 480/400 = 1.2)
+                        const scaleX = rect.width / 500;
+                        const scaleY = rect.height / 400;
                         setHoveredScatterPoint({
                           state: state.state,
                           aqi: Math.round(aqi),
@@ -4892,8 +5050,8 @@ export default function App() {
                           region: region,
                         });
                         setScatterTooltipPos({
-                          x: rect.left + x + 15,
-                          y: rect.top + y - 10,
+                          x: rect.left + x * scaleX + 15,
+                          y: rect.top + y * scaleY - 10,
                         });
                       }}
                       onMouseLeave={() => setHoveredScatterPoint(null)}
@@ -4901,8 +5059,9 @@ export default function App() {
                   );
                 })}
               </svg>
+              </div>
 
-              {/* Scatter Plot Tooltip */}
+              {/* Scatter Plot Tooltip - outside transform wrapper for proper fixed positioning */}
               {hoveredScatterPoint && (
                 <div
                   style={{
@@ -4968,6 +5127,28 @@ export default function App() {
                   </div>
                 </div>
               )}
+
+              {/* Himalayas Image - shown when Geography is active */}
+              <div style={{
+                position: activeScatterIndex === 2 ? "relative" : "absolute",
+                opacity: activeScatterIndex === 2 ? 1 : 0,
+                transform: activeScatterIndex === 2 ? "scale(1)" : "scale(0.95)",
+                transition: "opacity 0.5s ease, transform 0.5s ease",
+                pointerEvents: activeScatterIndex === 2 ? "auto" : "none",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}>
+                <img
+                  src="/Himalayas.png"
+                  alt="Himalayas blocking air flow"
+                  style={{
+                    maxWidth: "100%",
+                    height: "auto",
+                    maxHeight: "500px",
+                  }}
+                />
+              </div>
             </div>
 
             {/* Right - Scrollable Text */}
@@ -5108,59 +5289,53 @@ export default function App() {
                   </p>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* How Geography Affects Air Quality Section */}
-          <div
-            style={{
-              padding: "40px 40px 80px 40px",
-              background: "#fff",
-              maxWidth: "1000px",
-              margin: "0 auto",
-              textAlign: "left",
-            }}
-          >
-            <h2
-              style={{
-                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                fontSize: "28px",
-                fontWeight: "700",
-                color: "#333",
-                marginBottom: "50px",
-              }}
-            >
-              How Geography Affects Air Quality
-            </h2>
-
-            {/* Himalayas Image */}
-            <div style={{ marginBottom: "40px" }}>
-              <img
-                src="/Himalayas.png"
-                alt="Himalayas blocking air flow"
+              {/* Geography Text */}
+              <div
+                ref={(el) => (scatterTextRefs.current[2] = el)}
                 style={{
-                  maxWidth: "100%",
-                  height: "auto",
-                  maxHeight: "400px",
+                  minHeight: "100vh",
+                  padding: "60px 40px",
+                  display: "flex",
+                  alignItems: "center",
                 }}
-              />
+              >
+                <div
+                  style={{
+                    maxWidth: "450px",
+                    padding: "30px",
+                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                    borderLeft: "4px solid #5699af",
+                  }}
+                >
+                  <h3
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "20px",
+                      fontWeight: "500",
+                      color: "#333",
+                      margin: 0,
+                    }}
+                  >
+                    How Geography Affects Air Quality
+                  </h3>
+                  <p
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "15px",
+                      lineHeight: "1.8",
+                      color: "#555",
+                      marginTop: "15px",
+                      marginBottom: 0,
+                    }}
+                  >
+                    The Himalayan mountain range acts as a natural barrier, trapping pollutants in the Indo-Gangetic Plain. Cold air from the mountains pushes pollution back down, while the lack of strong winds prevents dispersion. This geographic phenomenon explains why northern states consistently experience higher pollution levels compared to coastal and peninsular regions.
+                  </p>
+                </div>
+              </div>
             </div>
-
-            {/* Text placeholder */}
-            <p
-              style={{
-                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                fontSize: "16px",
-                fontWeight: "400",
-                lineHeight: "2.0",
-                color: "#555",
-                maxWidth: "800px",
-                textAlign: "left",
-                margin: 0,
-              }}
-            >
-              The Himalayan mountain range acts as a natural barrier, trapping pollutants in the Indo-Gangetic Plain. Cold air from the mountains pushes pollution back down, while the lack of strong winds prevents dispersion. This geographic phenomenon explains why northern states consistently experience higher pollution levels compared to coastal and peninsular regions.
-            </p>
           </div>
 
           {/* Seasonal Pollution Section */}
@@ -5614,6 +5789,34 @@ export default function App() {
             </div>
           </div>
 
+          {/* Transition Text before Sources of Pollution */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              padding: "80px 20px",
+              backgroundColor: "#fff",
+            }}
+          >
+            <p
+              style={{
+                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                fontSize: "22px",
+                fontWeight: "300",
+                color: "#333",
+                textAlign: "left",
+                maxWidth: "800px",
+                lineHeight: "2.0",
+                margin: 0,
+                borderLeft: "4px solid #5699af",
+                paddingLeft: "30px",
+              }}
+            >
+              These pollutants do not rise from a single origin, but from a web of diverse and intertwined sources that collectively shape the air around.
+            </p>
+          </div>
+
           {/* Sources of Pollution Section - Industrial Tower Visualization */}
           <div
             ref={sourcesScrollRef}
@@ -5662,22 +5865,16 @@ export default function App() {
                     overflow: "visible",
                   }}
                 >
-                  <defs>
-                    <filter id="smokeBlur" x="-50%" y="-50%" width="200%" height="200%">
-                      <feGaussianBlur in="SourceGraphic" stdDeviation="5" />
-                    </filter>
-                  </defs>
-
                   {/* Individual clouds for each pollution source */}
                   {[
-                    { x: 100, y: 160, label: "Vehicle Emissions" },
-                    { x: 300, y: 150, label: "Road Dust" },
-                    { x: 500, y: 140, label: "Industrial Emissions" },
-                    { x: 180, y: 115, label: "Garbage Burning" },
-                    { x: 400, y: 105, label: "Diesel Generators" },
-                    { x: 100, y: 75, label: "Crop Burning" },
-                    { x: 300, y: 65, label: "Construction" },
-                    { x: 500, y: 55, label: "Coal Power Plants" },
+                    { x: 100, y: 90, label: "Vehicle Emissions" },
+                    { x: 300, y: 80, label: "Road Dust" },
+                    { x: 500, y: 70, label: "Industrial Emissions" },
+                    { x: 180, y: 45, label: "Garbage Burning" },
+                    { x: 400, y: 35, label: "Diesel Generators" },
+                    { x: 100, y: 5, label: "Crop Burning" },
+                    { x: 300, y: -5, label: "Construction" },
+                    { x: 500, y: -15, label: "Coal Power Plants" },
                   ].map((cloud, index) => {
                     const isVisible = visibleSources > index;
                     const animationDelay = `${index * 0.5}s`;
@@ -5691,9 +5888,8 @@ export default function App() {
                           transition: "all 0.8s ease-out",
                         }}
                       >
-                        {/* Cloud shape with blur filter */}
+                        {/* Cloud shape */}
                         <g
-                          filter="url(#smokeBlur)"
                           style={{
                             animation: isVisible ? `smokePulse 6s ease-in-out infinite ${animationDelay}` : "none",
                             transformOrigin: `${cloud.x}px ${cloud.y}px`
@@ -5704,21 +5900,21 @@ export default function App() {
                             cy={cloud.y - 6}
                             rx="27"
                             ry="18"
-                            fill="#c8c8c8"
+                            fill="#d8d8d8"
                           />
                           <ellipse
                             cx={cloud.x + 30}
                             cy={cloud.y - 9}
                             rx="30"
                             ry="21"
-                            fill="#c8c8c8"
+                            fill="#d8d8d8"
                           />
                           <ellipse
                             cx={cloud.x}
                             cy={cloud.y}
                             rx="45"
                             ry="27"
-                            fill="#c8c8c8"
+                            fill="#d8d8d8"
                           />
                         </g>
 
@@ -5748,7 +5944,7 @@ export default function App() {
                 display: "flex",
                 flexDirection: "column",
                 paddingBottom: "80vh",
-                paddingLeft: "60px",
+                paddingLeft: "100px",
               }}
             >
               {pollutionSources.map((source, index) => (
@@ -6856,7 +7052,7 @@ export default function App() {
                 fontWeight: "600",
                 lineHeight: "2.0",
                 textAlign: "center",
-                color: "#5B7DB8",
+                color: "#5699af",
                 marginTop: "120px",
               }}
             >

@@ -2432,7 +2432,491 @@ export default function App() {
             <p style={{ marginTop: "10px" }}>
               Another hard truth lies beneath these numbers. India’s rapid urbanization and heavy reliance on fossil fuels powering its expanding cities, industries, and transport systems have tied economic growth to environmental cost. The same coal plants, vehicles, and factories driving development also release the pollutants that fill the air with harmful particulate matter each day.  </p>
             <p style={{ marginTop: "10px" }}>
-             And perhaps the deepest truth is this: in a nation home to one of the world’s largest and densest populations, the pressures are immense. Rising energy demand, growing vehicle ownership, and expanding infrastructure have intensified emissions, while transitions to cleaner systems remain uneven and slow. Air pollution in India is not just an environmental statistic, it is a structural condition shaped by policy, geography, inequality, and the systems that determine what millions breathe every single day.     </p>
+             And perhaps the deepest truth is this: in a nation home to one of the world's largest and densest populations, the pressures are immense. Rising energy demand, growing vehicle ownership, and expanding infrastructure have intensified emissions, while transitions to cleaner systems remain uneven and slow. Air pollution in India is not just an environmental statistic, it is a structural condition shaped by policy, geography, inequality, and the systems that determine what millions breathe every single day.     </p>
+          </div>
+
+          {/* Delhi & Six Cities Scrollytelling Section */}
+          <div
+            ref={mapScrollRef}
+            style={{
+              display: "flex",
+              minHeight: "200vh",
+              padding: "0 40px",
+              maxWidth: "1400px",
+              margin: "0 auto",
+              marginTop: "50px",
+            }}
+          >
+            {/* Left column - Sticky map that transitions */}
+            <div
+              style={{
+                flex: "6",
+                position: "sticky",
+                top: "10vh",
+                height: "80vh",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-start",
+                marginLeft: "-40px",
+              }}
+            >
+              {/* Container for maps with relative positioning */}
+              <div
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  maxWidth: "700px",
+                  height: "700px",
+                }}
+              >
+              {/* Delhi map - India base map with Delhi highlighted */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  maxWidth: "700px",
+                  height: "700px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: activeMapIndex === 0 ? 1 : 0,
+                  visibility: activeMapIndex === 0 ? "visible" : "hidden",
+                  transition: "opacity 0.4s ease, visibility 0.4s ease",
+                  pointerEvents: activeMapIndex === 0 ? "auto" : "none",
+                }}
+              >
+                {/* Base India map with Delhi highlighted */}
+                <object
+                  ref={delhiMapRef}
+                  data="/india-states.svg"
+                  type="image/svg+xml"
+                  width="550"
+                  height="650"
+                  style={{ pointerEvents: "auto" }}
+                  onLoad={() => {
+                    if (delhiMapRef.current) {
+                      const svgDoc = delhiMapRef.current.contentDocument;
+                      if (svgDoc) {
+                        const paths = svgDoc.querySelectorAll("path");
+                        paths.forEach((path) => {
+                          const stateName = path.getAttribute("name");
+                          if (stateName === "Delhi") {
+                            path.style.fill = "#3a9bb2";
+                            path.style.stroke = "#2a7a8a";
+                            path.style.strokeWidth = "1";
+                            path.style.opacity = "1";
+                            path.style.cursor = "pointer";
+                            path.style.transition = "fill 0.2s ease";
+
+                            // Add hover events for Delhi
+                            path.addEventListener("mouseenter", (e) => {
+                              path.style.fill = "#2d8a9a";
+                              setDelhiHovered(true);
+                              setDelhiTooltipPos({ x: e.clientX, y: e.clientY });
+                            });
+                            path.addEventListener("mousemove", (e) => {
+                              setDelhiTooltipPos({ x: e.clientX, y: e.clientY });
+                            });
+                            path.addEventListener("mouseleave", () => {
+                              path.style.fill = "#3a9bb2";
+                              setDelhiHovered(false);
+                            });
+                          } else {
+                            path.style.fill = "#d0d0d0";
+                            path.style.stroke = "#fff";
+                            path.style.strokeWidth = "0.5";
+                            path.style.opacity = "0.7";
+                          }
+                        });
+                      }
+                    }
+                  }}
+                />
+
+                {/* Delhi Tooltip */}
+                {delhiHovered && (
+                  <div
+                    style={{
+                      position: "fixed",
+                      left: delhiTooltipPos.x + 15,
+                      top: delhiTooltipPos.y - 10,
+                      backgroundColor: "#fff",
+                      border: "1px solid #d0d0d0",
+                      borderRadius: "8px",
+                      padding: "15px 20px",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                      zIndex: 1000,
+                      pointerEvents: "none",
+                      minWidth: "250px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                        fontSize: "18px",
+                        fontWeight: "700",
+                        color: "#3a9bb2",
+                        marginBottom: "10px",
+                      }}
+                    >
+                      Delhi
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                        fontSize: "14px",
+                        color: "#333",
+                        marginBottom: "8px",
+                      }}
+                    >
+                      <strong>2024 Average AQI:</strong> 227 (Poor)
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                        fontSize: "13px",
+                        color: "#555",
+                        lineHeight: "1.6",
+                      }}
+                    >
+                      <div style={{ marginBottom: "4px" }}>
+                        #1 Most Polluted Capital City in the World (2024)
+                      </div>
+                      <div>
+                        #2 Most Polluted City in the World (2024)
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Six Cities map - Same style as Delhi map */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  maxWidth: "700px",
+                  height: "700px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: activeMapIndex === 1 ? 1 : 0,
+                  visibility: activeMapIndex === 1 ? "visible" : "hidden",
+                  transition: "opacity 0.4s ease, visibility 0.4s ease",
+                  pointerEvents: activeMapIndex === 1 ? "auto" : "none",
+                }}
+              >
+                {/* Base India map with same styling as Delhi map */}
+                <object
+                  ref={sixCitiesMapRef}
+                  data="/india-states.svg"
+                  type="image/svg+xml"
+                  width="550"
+                  height="650"
+                  style={{ pointerEvents: "none" }}
+                  onLoad={() => {
+                    if (sixCitiesMapRef.current) {
+                      const svgDoc = sixCitiesMapRef.current.contentDocument;
+                      if (svgDoc) {
+                        const paths = svgDoc.querySelectorAll("path");
+                        paths.forEach((path) => {
+                          path.style.fill = "#d0d0d0";
+                          path.style.stroke = "#fff";
+                          path.style.strokeWidth = "0.5";
+                          path.style.opacity = "0.7";
+                        });
+                      }
+                    }
+                  }}
+                />
+
+                {/* City markers overlay */}
+                <svg
+                  width="550"
+                  height="650"
+                  viewBox="0 0 600 700"
+                  style={{ position: "absolute", pointerEvents: "auto" }}
+                >
+                  {/* 6 Indian Cities from Top 10 Most Polluted Cities in the World */}
+                  {/* Coordinates calculated using: x = ((lon-68)/30)*600, y = ((37-lat)/31)*700 */}
+
+                  {/* Byrnihat, Assam (lat: 26.04, lon: 91.82) - Near Guwahati, Assam-Meghalaya border */}
+                  <g
+                    style={{ cursor: "pointer" }}
+                    onMouseEnter={(e) => { setHoveredCity("Byrnihat"); setCityTooltipPos({ x: e.clientX, y: e.clientY }); }}
+                    onMouseMove={(e) => setCityTooltipPos({ x: e.clientX, y: e.clientY })}
+                    onMouseLeave={() => setHoveredCity(null)}
+                  >
+                    <circle cx="480" cy="285" r="24" fill="#3a9bb2" opacity={hoveredCity === "Byrnihat" ? 0.5 : 0.3} style={{ transition: "opacity 0.2s" }} />
+                    <circle cx="480" cy="285" r="4" fill="#3a9bb2" opacity="1" />
+                  </g>
+                  <text x="480" y="255" textAnchor="middle" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>Byrnihat</text>
+
+                  {/* Delhi (lat: 28.61, lon: 77.21) */}
+                  <g
+                    style={{ cursor: "pointer" }}
+                    onMouseEnter={(e) => { setHoveredCity("Delhi"); setCityTooltipPos({ x: e.clientX, y: e.clientY }); }}
+                    onMouseMove={(e) => setCityTooltipPos({ x: e.clientX, y: e.clientY })}
+                    onMouseLeave={() => setHoveredCity(null)}
+                  >
+                    <circle cx="184" cy="220" r="22" fill="#3a9bb2" opacity={hoveredCity === "Delhi" ? 0.5 : 0.3} style={{ transition: "opacity 0.2s" }} />
+                    <circle cx="184" cy="220" r="4" fill="#3a9bb2" opacity="1" />
+                  </g>
+                  <text x="154" y="208" textAnchor="end" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>Delhi</text>
+
+                  {/* Mullanpur, Punjab (lat: 30.79, lon: 76.61) - Near Chandigarh */}
+                  <g
+                    style={{ cursor: "pointer" }}
+                    onMouseEnter={(e) => { setHoveredCity("Mullanpur"); setCityTooltipPos({ x: e.clientX, y: e.clientY }); }}
+                    onMouseMove={(e) => setCityTooltipPos({ x: e.clientX, y: e.clientY })}
+                    onMouseLeave={() => setHoveredCity(null)}
+                  >
+                    <circle cx="172" cy="175" r="20" fill="#3a9bb2" opacity={hoveredCity === "Mullanpur" ? 0.5 : 0.3} style={{ transition: "opacity 0.2s" }} />
+                    <circle cx="172" cy="175" r="4" fill="#3a9bb2" opacity="1" />
+                  </g>
+                  <text x="148" y="163" textAnchor="end" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>Mullanpur</text>
+
+                  {/* Faridabad, Haryana (lat: 28.4, lon: 77.3) - South of Delhi */}
+                  <g
+                    style={{ cursor: "pointer" }}
+                    onMouseEnter={(e) => { setHoveredCity("Faridabad"); setCityTooltipPos({ x: e.clientX, y: e.clientY }); }}
+                    onMouseMove={(e) => setCityTooltipPos({ x: e.clientX, y: e.clientY })}
+                    onMouseLeave={() => setHoveredCity(null)}
+                  >
+                    <circle cx="186" cy="225" r="18" fill="#3a9bb2" opacity={hoveredCity === "Faridabad" ? 0.5 : 0.3} style={{ transition: "opacity 0.2s" }} />
+                    <circle cx="186" cy="225" r="4" fill="#3a9bb2" opacity="1" />
+                  </g>
+                  <text x="216" y="225" textAnchor="start" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>Faridabad</text>
+
+                  {/* Loni, UP (lat: 28.75, lon: 77.28) - East of Delhi */}
+                  <g
+                    style={{ cursor: "pointer" }}
+                    onMouseEnter={(e) => { setHoveredCity("Loni"); setCityTooltipPos({ x: e.clientX, y: e.clientY }); }}
+                    onMouseMove={(e) => setCityTooltipPos({ x: e.clientX, y: e.clientY })}
+                    onMouseLeave={() => setHoveredCity(null)}
+                  >
+                    <circle cx="186" cy="217" r="16" fill="#3a9bb2" opacity={hoveredCity === "Loni" ? 0.5 : 0.3} style={{ transition: "opacity 0.2s" }} />
+                    <circle cx="186" cy="217" r="4" fill="#3a9bb2" opacity="1" />
+                  </g>
+                  <text x="216" y="207" textAnchor="start" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>Loni</text>
+
+                  {/* New Delhi (lat: 28.61, lon: 77.21) */}
+                  <g
+                    style={{ cursor: "pointer" }}
+                    onMouseEnter={(e) => { setHoveredCity("New Delhi"); setCityTooltipPos({ x: e.clientX, y: e.clientY }); }}
+                    onMouseMove={(e) => setCityTooltipPos({ x: e.clientX, y: e.clientY })}
+                    onMouseLeave={() => setHoveredCity(null)}
+                  >
+                    <circle cx="184" cy="220" r="14" fill="#3a9bb2" opacity={hoveredCity === "New Delhi" ? 0.5 : 0.3} style={{ transition: "opacity 0.2s" }} />
+                    <circle cx="184" cy="220" r="4" fill="#3a9bb2" opacity="1" />
+                  </g>
+                  <text x="154" y="230" textAnchor="end" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>New Delhi</text>
+                </svg>
+
+                {/* Tooltip showing all 10 most polluted cities */}
+                {hoveredCity && (
+                  <div
+                    style={{
+                      position: "fixed",
+                      left: cityTooltipPos.x + 15,
+                      top: cityTooltipPos.y - 10,
+                      backgroundColor: "#fff",
+                      border: "1px solid #d0d0d0",
+                      borderRadius: "8px",
+                      padding: "15px 20px",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                      zIndex: 1000,
+                      pointerEvents: "none",
+                      minWidth: "220px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                        fontSize: "14px",
+                        fontWeight: "700",
+                        color: "#3a9bb2",
+                        marginBottom: "12px",
+                        borderBottom: "1px solid #e0e0e0",
+                        paddingBottom: "8px",
+                      }}
+                    >
+                      Top 10 Most Polluted Cities (2024)
+                    </div>
+                    {[
+                      { rank: 1, city: "Byrnihat", country: "India" },
+                      { rank: 2, city: "Delhi", country: "India" },
+                      { rank: 3, city: "Karaganda", country: "Kazakhstan" },
+                      { rank: 4, city: "Mullanpur", country: "India" },
+                      { rank: 5, city: "Lahore", country: "Pakistan" },
+                      { rank: 6, city: "Faridabad", country: "India" },
+                      { rank: 7, city: "Dera Ismail Khan", country: "Pakistan" },
+                      { rank: 8, city: "N'Djamena", country: "Chad" },
+                      { rank: 9, city: "Loni", country: "India" },
+                      { rank: 10, city: "New Delhi", country: "India" },
+                    ].map((item) => (
+                      <div
+                        key={item.rank}
+                        style={{
+                          fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                          fontSize: "12px",
+                          color: item.city === hoveredCity ? "#3a9bb2" : "#bbb",
+                          fontWeight: item.city === hoveredCity ? "700" : "400",
+                          padding: "4px 0",
+                          backgroundColor: item.city === hoveredCity ? "#f0f8fa" : "transparent",
+                          marginLeft: "-8px",
+                          marginRight: "-8px",
+                          paddingLeft: "8px",
+                          paddingRight: "8px",
+                          borderRadius: "4px",
+                        }}
+                      >
+                        {item.rank}. {item.city}, {item.country}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              </div>
+            </div>
+
+            {/* Right column - Scrollable text sections */}
+            <div
+              style={{
+                flex: "4",
+                display: "flex",
+                flexDirection: "column",
+                paddingLeft: "40px",
+              }}
+            >
+              {/* Delhi text section */}
+              <div
+                ref={delhiTextRef}
+                data-mapindex="0"
+                style={{
+                  minHeight: "100vh",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  paddingTop: "20vh",
+                  paddingBottom: "20vh",
+                  opacity: activeMapIndex === 0 ? 1 : 0.3,
+                  transition: "opacity 0.4s ease-out",
+                  paddingLeft: "60px",
+                }}
+              >
+                <div
+                  style={{
+                    maxWidth: "450px",
+                    padding: "30px",
+                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                    borderLeft: "4px solid #5699af",
+                  }}
+                >
+                  <h2
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "48px",
+                      fontWeight: "700",
+                      color: "#3a9bb2",
+                      margin: "0 0 20px 0",
+                      letterSpacing: "2px",
+                      textAlign: "left",
+                    }}
+                  >
+                    DELHI
+                  </h2>
+                  <p
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "16px",
+                      fontWeight: "400",
+                      color: "#333",
+                      lineHeight: "2.0",
+                      margin: "0",
+                      textAlign: "left",
+                    }}
+                  >
+                  had the poorest air quality, in 2024 among capital cities globally, with concentrations of particulate matter (PM2.5) nearly 10 times higher than the World Health Organization guidelines.
+                  </p>
+                </div>
+              </div>
+
+              {/* Six Cities text section */}
+              <div
+                ref={sixCitiesTextRef}
+                data-mapindex="1"
+                style={{
+                  minHeight: "100vh",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  paddingTop: "20vh",
+                  paddingBottom: "20vh",
+                  opacity: activeMapIndex === 1 ? 1 : 0.3,
+                  transition: "opacity 0.4s ease-out",
+                  paddingLeft: "60px",
+                }}
+              >
+                <div
+                  style={{
+                    maxWidth: "450px",
+                    padding: "30px",
+                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                    borderLeft: "4px solid #5699af",
+                  }}
+                >
+                  <h2
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "72px",
+                      fontWeight: "700",
+                      margin: "0 0 20px 0",
+                      textAlign: "left",
+                      lineHeight: "1.1",
+                    }}
+                  >
+                    <span style={{ color: "#3a9bb2" }}>6</span>
+                    <span style={{ color: "#444" }}> out of 10</span>
+                  </h2>
+                  <p
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "16px",
+                      fontWeight: "400",
+                      color: "#555",
+                      lineHeight: "2.0",
+                      margin: "0",
+                      textAlign: "left",
+                    }}
+                  >
+                    most polluted cities of 2024 in the world are in India.
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "12px",
+                      fontWeight: "400",
+                      color: "#888",
+                      lineHeight: "1.5",
+                      margin: "20px 0 0 0",
+                      textAlign: "left",
+                    }}
+                  >
+                    Source: <a href="https://www.iqair.com/world-most-polluted-cities" target="_blank" rel="noopener noreferrer" style={{ color: "#5699af" }}>IQAir - World Most Polluted Cities</a>
+                  </p>
+                </div>
+              </div>
+
+            </div>
           </div>
 
           {/* KPI Sections - 3 columns */}
@@ -2446,7 +2930,7 @@ export default function App() {
               gap: "60px",
               maxWidth: "1400px",
               margin: "0 auto",
-              marginTop: "10px",
+              marginTop: "120px",
             }}
           >
             {/* KPI 1 - 35% */}
@@ -2724,6 +3208,102 @@ export default function App() {
                 transform: "translateX(-50%)",
               }}
             />
+
+            {/* Image 1 - Left image, Right text */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                marginBottom: "120px",
+              }}
+            >
+              <div style={{ flex: 1, paddingRight: "40px", display: "flex", justifyContent: "flex-end" }}>
+                <img
+                  src="/image1.jpeg.webp"
+                  alt="Heavy smog at Barakhamba, New Delhi"
+                  style={{
+                    width: "100%",
+                    maxWidth: "450px",
+                    height: "auto",
+                    display: "block",
+                  }}
+                />
+              </div>
+              {/* Dot on timeline */}
+              <div
+                style={{
+                  width: "16px",
+                  height: "16px",
+                  backgroundColor: "#5699af",
+                  borderRadius: "50%",
+                  flexShrink: 0,
+                  zIndex: 10,
+                }}
+              />
+              <div style={{ flex: 1, paddingLeft: "40px" }}>
+                <p
+                  style={{
+                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                    fontSize: "16px",
+                    color: "#555",
+                    lineHeight: "2.0",
+                    maxWidth: "400px",
+                    margin: 0,
+                    textAlign: "left",
+                  }}
+                >
+                  Heavy smog seen engulfed amid rise in pollution levels at Barakhamba on Nov. 2, 2023 in New Delhi, India. Authorities in the Indian capital, have shut all primary schools for two days amid worsening levels of air pollution.As part of the third phase of its Graded Response Action Plan to combat effects of increased pollution, a central pollution control panel ordered an immediate ban on non-essential construction work in the city.
+                      </p>
+              </div>
+            </div>
+
+            {/* Image 2 - Right image, Left text */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                marginBottom: "120px",
+              }}
+            >
+              <div style={{ flex: 1, paddingRight: "40px", display: "flex", justifyContent: "flex-end" }}>
+                <p
+                  style={{
+                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                    fontSize: "16px",
+                    color: "#555",
+                    lineHeight: "2.0",
+                    maxWidth: "400px",
+                    margin: 0,
+                    textAlign: "right",
+                  }}
+                >
+                  On November 8, 2017, Indian schoolchildren covered their faces as they walked to school through thick smog in New Delhi. Air pollution had reached hazardous levels, forcing authorities to temporarily shut down the education system until the following week. The decision came just a day after doctors declared a “public health emergency” in what was then described as the world’s most polluted city.
+                     </p>
+              </div>
+              {/* Dot on timeline */}
+              <div
+                style={{
+                  width: "16px",
+                  height: "16px",
+                  backgroundColor: "#5699af",
+                  borderRadius: "50%",
+                  flexShrink: 0,
+                  zIndex: 10,
+                }}
+              />
+              <div style={{ flex: 1, paddingLeft: "40px" }}>
+                <img
+                  src="/image2.jpg"
+                  alt="Schoolchildren in smog, New Delhi"
+                  style={{
+                    width: "100%",
+                    maxWidth: "450px",
+                    height: "auto",
+                    display: "block",
+                  }}
+                />
+              </div>
+            </div>
 
             {/* Image 3 - Left image, Right text */}
             <div
@@ -3539,490 +4119,6 @@ export default function App() {
             >
               India's response to air pollution spans decades of policies, monitoring frameworks, and emergency interventions. On paper, the actions are many. On the ground, however, clean air remains out of reach for most.
             </p>
-          </div>
-
-          {/* Delhi & Six Cities Scrollytelling Section */}
-          <div
-            ref={mapScrollRef}
-            style={{
-              display: "flex",
-              minHeight: "200vh",
-              padding: "0 40px",
-              maxWidth: "1400px",
-              margin: "0 auto",
-              marginTop: "50px",
-            }}
-          >
-            {/* Left column - Sticky map that transitions */}
-            <div
-              style={{
-                flex: "6",
-                position: "sticky",
-                top: "10vh",
-                height: "80vh",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "flex-start",
-                marginLeft: "-40px",
-              }}
-            >
-              {/* Container for maps with relative positioning */}
-              <div
-                style={{
-                  position: "relative",
-                  width: "100%",
-                  maxWidth: "700px",
-                  height: "700px",
-                }}
-              >
-              {/* Delhi map - India base map with Delhi highlighted */}
-              <div
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  maxWidth: "700px",
-                  height: "700px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  opacity: activeMapIndex === 0 ? 1 : 0,
-                  visibility: activeMapIndex === 0 ? "visible" : "hidden",
-                  transition: "opacity 0.4s ease, visibility 0.4s ease",
-                  pointerEvents: activeMapIndex === 0 ? "auto" : "none",
-                }}
-              >
-                {/* Base India map with Delhi highlighted */}
-                <object
-                  ref={delhiMapRef}
-                  data="/india-states.svg"
-                  type="image/svg+xml"
-                  width="550"
-                  height="650"
-                  style={{ pointerEvents: "auto" }}
-                  onLoad={() => {
-                    if (delhiMapRef.current) {
-                      const svgDoc = delhiMapRef.current.contentDocument;
-                      if (svgDoc) {
-                        const paths = svgDoc.querySelectorAll("path");
-                        paths.forEach((path) => {
-                          const stateName = path.getAttribute("name");
-                          if (stateName === "Delhi") {
-                            path.style.fill = "#3a9bb2";
-                            path.style.stroke = "#2a7a8a";
-                            path.style.strokeWidth = "1";
-                            path.style.opacity = "1";
-                            path.style.cursor = "pointer";
-                            path.style.transition = "fill 0.2s ease";
-
-                            // Add hover events for Delhi
-                            path.addEventListener("mouseenter", (e) => {
-                              path.style.fill = "#2d8a9a";
-                              setDelhiHovered(true);
-                              setDelhiTooltipPos({ x: e.clientX, y: e.clientY });
-                            });
-                            path.addEventListener("mousemove", (e) => {
-                              setDelhiTooltipPos({ x: e.clientX, y: e.clientY });
-                            });
-                            path.addEventListener("mouseleave", () => {
-                              path.style.fill = "#3a9bb2";
-                              setDelhiHovered(false);
-                            });
-                          } else {
-                            path.style.fill = "#d0d0d0";
-                            path.style.stroke = "#fff";
-                            path.style.strokeWidth = "0.5";
-                            path.style.opacity = "0.7";
-                          }
-                        });
-                      }
-                    }
-                  }}
-                />
-
-                {/* Delhi Tooltip */}
-                {delhiHovered && (
-                  <div
-                    style={{
-                      position: "fixed",
-                      left: delhiTooltipPos.x + 15,
-                      top: delhiTooltipPos.y - 10,
-                      backgroundColor: "#fff",
-                      border: "1px solid #d0d0d0",
-                      borderRadius: "8px",
-                      padding: "15px 20px",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                      zIndex: 1000,
-                      pointerEvents: "none",
-                      minWidth: "250px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                        fontSize: "18px",
-                        fontWeight: "700",
-                        color: "#3a9bb2",
-                        marginBottom: "10px",
-                      }}
-                    >
-                      Delhi
-                    </div>
-                    <div
-                      style={{
-                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                        fontSize: "14px",
-                        color: "#333",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      <strong>2024 Average AQI:</strong> 227 (Poor)
-                    </div>
-                    <div
-                      style={{
-                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                        fontSize: "13px",
-                        color: "#555",
-                        lineHeight: "1.6",
-                      }}
-                    >
-                      <div style={{ marginBottom: "4px" }}>
-                        #1 Most Polluted Capital City in the World (2024)
-                      </div>
-                      <div>
-                        #2 Most Polluted City in the World (2024)
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Six Cities map - Same style as Delhi map */}
-              <div
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  maxWidth: "700px",
-                  height: "700px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  opacity: activeMapIndex === 1 ? 1 : 0,
-                  visibility: activeMapIndex === 1 ? "visible" : "hidden",
-                  transition: "opacity 0.4s ease, visibility 0.4s ease",
-                  pointerEvents: activeMapIndex === 1 ? "auto" : "none",
-                }}
-              >
-                {/* Base India map with same styling as Delhi map */}
-                <object
-                  ref={sixCitiesMapRef}
-                  data="/india-states.svg"
-                  type="image/svg+xml"
-                  width="550"
-                  height="650"
-                  style={{ pointerEvents: "none" }}
-                  onLoad={() => {
-                    if (sixCitiesMapRef.current) {
-                      const svgDoc = sixCitiesMapRef.current.contentDocument;
-                      if (svgDoc) {
-                        const paths = svgDoc.querySelectorAll("path");
-                        paths.forEach((path) => {
-                          path.style.fill = "#d0d0d0";
-                          path.style.stroke = "#fff";
-                          path.style.strokeWidth = "0.5";
-                          path.style.opacity = "0.7";
-                        });
-                      }
-                    }
-                  }}
-                />
-
-                {/* City markers overlay */}
-                <svg
-                  width="550"
-                  height="650"
-                  viewBox="0 0 600 700"
-                  style={{ position: "absolute", pointerEvents: "auto" }}
-                >
-                  {/* 6 Indian Cities from Top 10 Most Polluted Cities in the World */}
-                  {/* Coordinates calculated using: x = ((lon-68)/30)*600, y = ((37-lat)/31)*700 */}
-
-                  {/* Byrnihat, Meghalaya (lat: 25.8, lon: 91.8) - Northeast India */}
-                  <circle
-                    cx="476" cy="253" r="24"
-                    fill="#3a9bb2"
-                    opacity={hoveredCity === "Byrnihat" ? 0.8 : 0.5}
-                    style={{ cursor: "pointer", transition: "opacity 0.2s" }}
-                    onMouseEnter={(e) => { setHoveredCity("Byrnihat"); setCityTooltipPos({ x: e.clientX, y: e.clientY }); }}
-                    onMouseMove={(e) => setCityTooltipPos({ x: e.clientX, y: e.clientY })}
-                    onMouseLeave={() => setHoveredCity(null)}
-                  />
-                  <text x="476" y="223" textAnchor="middle" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>Byrnihat</text>
-
-                  {/* Delhi (lat: 28.7, lon: 77.1) */}
-                  <circle
-                    cx="182" cy="187" r="22"
-                    fill="#3a9bb2"
-                    opacity={hoveredCity === "Delhi" ? 0.8 : 0.5}
-                    style={{ cursor: "pointer", transition: "opacity 0.2s" }}
-                    onMouseEnter={(e) => { setHoveredCity("Delhi"); setCityTooltipPos({ x: e.clientX, y: e.clientY }); }}
-                    onMouseMove={(e) => setCityTooltipPos({ x: e.clientX, y: e.clientY })}
-                    onMouseLeave={() => setHoveredCity(null)}
-                  />
-                  <text x="152" y="175" textAnchor="end" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>Delhi</text>
-
-                  {/* Mullanpur, Punjab (lat: 30.8, lon: 76.7) - Near Chandigarh */}
-                  <circle
-                    cx="174" cy="140" r="20"
-                    fill="#3a9bb2"
-                    opacity={hoveredCity === "Mullanpur" ? 0.8 : 0.5}
-                    style={{ cursor: "pointer", transition: "opacity 0.2s" }}
-                    onMouseEnter={(e) => { setHoveredCity("Mullanpur"); setCityTooltipPos({ x: e.clientX, y: e.clientY }); }}
-                    onMouseMove={(e) => setCityTooltipPos({ x: e.clientX, y: e.clientY })}
-                    onMouseLeave={() => setHoveredCity(null)}
-                  />
-                  <text x="150" y="128" textAnchor="end" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>Mullanpur</text>
-
-                  {/* Faridabad, Haryana (lat: 28.4, lon: 77.3) - South of Delhi */}
-                  <circle
-                    cx="186" cy="194" r="18"
-                    fill="#3a9bb2"
-                    opacity={hoveredCity === "Faridabad" ? 0.8 : 0.5}
-                    style={{ cursor: "pointer", transition: "opacity 0.2s" }}
-                    onMouseEnter={(e) => { setHoveredCity("Faridabad"); setCityTooltipPos({ x: e.clientX, y: e.clientY }); }}
-                    onMouseMove={(e) => setCityTooltipPos({ x: e.clientX, y: e.clientY })}
-                    onMouseLeave={() => setHoveredCity(null)}
-                  />
-                  <text x="216" y="194" textAnchor="start" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>Faridabad</text>
-
-                  {/* Loni, UP (lat: 28.75, lon: 77.28) - East of Delhi */}
-                  <circle
-                    cx="186" cy="186" r="16"
-                    fill="#3a9bb2"
-                    opacity={hoveredCity === "Loni" ? 0.8 : 0.5}
-                    style={{ cursor: "pointer", transition: "opacity 0.2s" }}
-                    onMouseEnter={(e) => { setHoveredCity("Loni"); setCityTooltipPos({ x: e.clientX, y: e.clientY }); }}
-                    onMouseMove={(e) => setCityTooltipPos({ x: e.clientX, y: e.clientY })}
-                    onMouseLeave={() => setHoveredCity(null)}
-                  />
-                  <text x="216" y="176" textAnchor="start" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>Loni</text>
-
-                  {/* New Delhi (lat: 28.6, lon: 77.2) */}
-                  <circle
-                    cx="184" cy="190" r="14"
-                    fill="#3a9bb2"
-                    opacity={hoveredCity === "New Delhi" ? 0.8 : 0.5}
-                    style={{ cursor: "pointer", transition: "opacity 0.2s" }}
-                    onMouseEnter={(e) => { setHoveredCity("New Delhi"); setCityTooltipPos({ x: e.clientX, y: e.clientY }); }}
-                    onMouseMove={(e) => setCityTooltipPos({ x: e.clientX, y: e.clientY })}
-                    onMouseLeave={() => setHoveredCity(null)}
-                  />
-                  <text x="154" y="200" textAnchor="end" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>New Delhi</text>
-                </svg>
-
-                {/* Tooltip showing all 10 most polluted cities */}
-                {hoveredCity && (
-                  <div
-                    style={{
-                      position: "fixed",
-                      left: cityTooltipPos.x + 15,
-                      top: cityTooltipPos.y - 10,
-                      backgroundColor: "#fff",
-                      border: "1px solid #d0d0d0",
-                      borderRadius: "8px",
-                      padding: "15px 20px",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                      zIndex: 1000,
-                      pointerEvents: "none",
-                      minWidth: "220px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                        fontSize: "14px",
-                        fontWeight: "700",
-                        color: "#3a9bb2",
-                        marginBottom: "12px",
-                        borderBottom: "1px solid #e0e0e0",
-                        paddingBottom: "8px",
-                      }}
-                    >
-                      Top 10 Most Polluted Cities (2024)
-                    </div>
-                    {[
-                      { rank: 1, city: "Byrnihat", country: "India" },
-                      { rank: 2, city: "Delhi", country: "India" },
-                      { rank: 3, city: "Karaganda", country: "Kazakhstan" },
-                      { rank: 4, city: "Mullanpur", country: "India" },
-                      { rank: 5, city: "Lahore", country: "Pakistan" },
-                      { rank: 6, city: "Faridabad", country: "India" },
-                      { rank: 7, city: "Dera Ismail Khan", country: "Pakistan" },
-                      { rank: 8, city: "N'Djamena", country: "Chad" },
-                      { rank: 9, city: "Loni", country: "India" },
-                      { rank: 10, city: "New Delhi", country: "India" },
-                    ].map((item) => (
-                      <div
-                        key={item.rank}
-                        style={{
-                          fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                          fontSize: "12px",
-                          color: item.city === hoveredCity ? "#3a9bb2" : "#bbb",
-                          fontWeight: item.city === hoveredCity ? "700" : "400",
-                          padding: "4px 0",
-                          backgroundColor: item.city === hoveredCity ? "#f0f8fa" : "transparent",
-                          marginLeft: "-8px",
-                          marginRight: "-8px",
-                          paddingLeft: "8px",
-                          paddingRight: "8px",
-                          borderRadius: "4px",
-                        }}
-                      >
-                        {item.rank}. {item.city}, {item.country}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              </div>
-            </div>
-
-            {/* Right column - Scrollable text sections */}
-            <div
-              style={{
-                flex: "4",
-                display: "flex",
-                flexDirection: "column",
-                paddingLeft: "40px",
-              }}
-            >
-              {/* Delhi text section */}
-              <div
-                ref={delhiTextRef}
-                data-mapindex="0"
-                style={{
-                  minHeight: "100vh",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  paddingTop: "20vh",
-                  paddingBottom: "20vh",
-                  opacity: activeMapIndex === 0 ? 1 : 0.3,
-                  transition: "opacity 0.4s ease-out",
-                  paddingLeft: "60px",
-                }}
-              >
-                <div
-                  style={{
-                    maxWidth: "450px",
-                    padding: "30px",
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
-                    borderRadius: "8px",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                    borderLeft: "4px solid #5699af",
-                  }}
-                >
-                  <h2
-                    style={{
-                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "48px",
-                      fontWeight: "700",
-                      color: "#3a9bb2",
-                      margin: "0 0 20px 0",
-                      letterSpacing: "2px",
-                      textAlign: "left",
-                    }}
-                  >
-                    DELHI
-                  </h2>
-                  <p
-                    style={{
-                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "16px",
-                      fontWeight: "400",
-                      color: "#333",
-                      lineHeight: "2.0",
-                      margin: "0",
-                      textAlign: "left",
-                    }}
-                  >
-                  had the poorest air quality, in 2024 among capital cities globally, with concentrations of particulate matter (PM2.5) nearly 10 times higher than the World Health Organization guidelines.
-                  </p>
-                </div>
-              </div>
-
-              {/* Six Cities text section */}
-              <div
-                ref={sixCitiesTextRef}
-                data-mapindex="1"
-                style={{
-                  minHeight: "100vh",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  paddingTop: "20vh",
-                  paddingBottom: "20vh",
-                  opacity: activeMapIndex === 1 ? 1 : 0.3,
-                  transition: "opacity 0.4s ease-out",
-                  paddingLeft: "60px",
-                }}
-              >
-                <div
-                  style={{
-                    maxWidth: "450px",
-                    padding: "30px",
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
-                    borderRadius: "8px",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                    borderLeft: "4px solid #5699af",
-                  }}
-                >
-                  <h2
-                    style={{
-                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "72px",
-                      fontWeight: "700",
-                      margin: "0 0 20px 0",
-                      textAlign: "left",
-                      lineHeight: "1.1",
-                    }}
-                  >
-                    <span style={{ color: "#3a9bb2" }}>6</span>
-                    <span style={{ color: "#444" }}> out of 10</span>
-                  </h2>
-                  <p
-                    style={{
-                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "16px",
-                      fontWeight: "400",
-                      color: "#555",
-                      lineHeight: "2.0",
-                      margin: "0",
-                      textAlign: "left",
-                    }}
-                  >
-                    most polluted cities of 2024 in the world are in India.
-                  </p>
-                  <p
-                    style={{
-                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "12px",
-                      fontWeight: "400",
-                      color: "#888",
-                      lineHeight: "1.5",
-                      margin: "20px 0 0 0",
-                      textAlign: "left",
-                    }}
-                  >
-                    Source: <a href="https://www.iqair.com/world-most-polluted-cities" target="_blank" rel="noopener noreferrer" style={{ color: "#5699af" }}>IQAir - World Most Polluted Cities</a>
-                  </p>
-                </div>
-              </div>
-
-            </div>
           </div>
 
           {/* Transition text before state circular visualizations */}

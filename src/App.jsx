@@ -901,15 +901,16 @@ export default function App() {
       legendContainer.className = "wind-legend";
       legendContainer.style.cssText = `
         position: absolute;
-        bottom: 30px;
-        left: 10px;
-        background: rgba(255, 255, 255, 0.9);
-        padding: 10px 12px;
+        bottom: 15px;
+        right: 15px;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 12px 15px;
         border-radius: 6px;
         font-family: Avenir, 'Avenir Next', Helvetica, Arial, sans-serif;
         font-size: 11px;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         z-index: 10;
+        display: none;
       `;
       legendContainer.innerHTML = `
         <div style="font-weight: 600; margin-bottom: 6px; color: #333;">Wind Speed</div>
@@ -2996,7 +2997,7 @@ export default function App() {
                   margin: "5px 0 0 0",
                 }}
               >
-                Feb 28, 2026
+                Mar 04, 2026
               </p>
             </div>
 
@@ -3495,6 +3496,21 @@ export default function App() {
                   >
                   had the poorest air quality, in 2024 among capital cities globally, with concentrations of particulate matter (PM2.5) nearly 10 times higher than the World Health Organization guidelines.
                   </p>
+                  <a
+                    href="https://www.iqair.com/newsroom/5-most-polluted-major-cities-in-world-2024"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "12px",
+                      color: "#5699af",
+                      textDecoration: "none",
+                      marginTop: "10px",
+                      display: "inline-block",
+                    }}
+                  >
+                    Source: IQAir
+                  </a>
                 </div>
               </div>
 
@@ -3868,16 +3884,43 @@ export default function App() {
               }}
             >
               <div style={{ flex: 1, paddingRight: "40px", display: "flex", justifyContent: "flex-end" }}>
-                <img
-                  src="/image1.jpeg.webp"
-                  alt="Heavy smog at Barakhamba, New Delhi"
-                  style={{
-                    width: "100%",
-                    maxWidth: "450px",
-                    height: "auto",
-                    display: "block",
-                  }}
-                />
+                <div
+                  style={{ position: "relative", maxWidth: "450px", width: "100%" }}
+                  onMouseEnter={(e) => e.currentTarget.querySelector('.source-link').style.opacity = 1}
+                  onMouseLeave={(e) => e.currentTarget.querySelector('.source-link').style.opacity = 0}
+                >
+                  <img
+                    src="/image1.jpeg.webp"
+                    alt="Heavy smog at Barakhamba, New Delhi"
+                    style={{
+                      width: "100%",
+                      height: "auto",
+                      display: "block",
+                    }}
+                  />
+                  <a
+                    className="source-link"
+                    href="https://image.cnbcfm.com/api/v1/image/107328321-1698985540067-gettyimages-1760458010-20231102_dli-skh-mn_pollution-016-a.jpeg?v=1698985624&w=1480&h=833&ffmt=webp&vtcrop=y"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      position: "absolute",
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      backgroundColor: "rgba(0,0,0,0.7)",
+                      color: "#fff",
+                      padding: "8px 12px",
+                      fontSize: "11px",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      textDecoration: "none",
+                      opacity: 0,
+                      transition: "opacity 0.3s ease",
+                    }}
+                  >
+                    Source: CNBC
+                  </a>
+                </div>
               </div>
               {/* Dot on timeline */}
               <div
@@ -3942,16 +3985,43 @@ export default function App() {
                 }}
               />
               <div style={{ flex: 1, paddingLeft: "40px" }}>
-                <img
-                  src="/image2.jpg"
-                  alt="Schoolchildren in smog, New Delhi"
-                  style={{
-                    width: "100%",
-                    maxWidth: "450px",
-                    height: "auto",
-                    display: "block",
-                  }}
-                />
+                <div
+                  style={{ position: "relative", maxWidth: "450px", width: "100%" }}
+                  onMouseEnter={(e) => e.currentTarget.querySelector('.source-link').style.opacity = 1}
+                  onMouseLeave={(e) => e.currentTarget.querySelector('.source-link').style.opacity = 0}
+                >
+                  <img
+                    src="/image2.jpg"
+                    alt="Schoolchildren in smog, New Delhi"
+                    style={{
+                      width: "100%",
+                      height: "auto",
+                      display: "block",
+                    }}
+                  />
+                  <a
+                    className="source-link"
+                    href="https://platform.vox.com/wp-content/uploads/sites/2/chorus/uploads/chorus_asset/file/9734675/GettyImages_871511920IndiaDelhi.jpg?quality=90&strip=all&crop=0,0.64377682403433,100,98.712446351931&w=1440"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      position: "absolute",
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      backgroundColor: "rgba(0,0,0,0.7)",
+                      color: "#fff",
+                      padding: "8px 12px",
+                      fontSize: "11px",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      textDecoration: "none",
+                      opacity: 0,
+                      transition: "opacity 0.3s ease",
+                    }}
+                  >
+                    Source: Vox
+                  </a>
+                </div>
               </div>
             </div>
 
@@ -3964,16 +4034,43 @@ export default function App() {
               }}
             >
               <div style={{ flex: 1, paddingRight: "40px", display: "flex", justifyContent: "flex-end" }}>
-                <img
-                  src="/image3.png"
-                  alt="Image 3"
-                  style={{
-                    width: "100%",
-                    maxWidth: "450px",
-                    height: "auto",
-                    display: "block",
-                  }}
-                />
+                <div
+                  style={{ position: "relative", maxWidth: "450px", width: "100%" }}
+                  onMouseEnter={(e) => e.currentTarget.querySelector('.source-link').style.opacity = 1}
+                  onMouseLeave={(e) => e.currentTarget.querySelector('.source-link').style.opacity = 0}
+                >
+                  <img
+                    src="/image3.png"
+                    alt="Image 3"
+                    style={{
+                      width: "100%",
+                      height: "auto",
+                      display: "block",
+                    }}
+                  />
+                  <a
+                    className="source-link"
+                    href="https://www.nbcnews.com/news/world/toxic-smog-covers-indian-capital-pollution-hits-record-levels-rcna180745"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      position: "absolute",
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      backgroundColor: "rgba(0,0,0,0.7)",
+                      color: "#fff",
+                      padding: "8px 12px",
+                      fontSize: "11px",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      textDecoration: "none",
+                      opacity: 0,
+                      transition: "opacity 0.3s ease",
+                    }}
+                  >
+                    Source: NBC News
+                  </a>
+                </div>
               </div>
               {/* Dot on timeline */}
               <div
@@ -4038,16 +4135,43 @@ export default function App() {
                 }}
               />
               <div style={{ flex: 1, paddingLeft: "40px" }}>
-                <img
-                  src="/image4.jpg"
-                  alt="Image 4"
-                  style={{
-                    width: "100%",
-                    maxWidth: "450px",
-                    height: "auto",
-                    display: "block",
-                  }}
-                />
+                <div
+                  style={{ position: "relative", maxWidth: "450px", width: "100%" }}
+                  onMouseEnter={(e) => e.currentTarget.querySelector('.source-link').style.opacity = 1}
+                  onMouseLeave={(e) => e.currentTarget.querySelector('.source-link').style.opacity = 0}
+                >
+                  <img
+                    src="/image4.jpg"
+                    alt="Image 4"
+                    style={{
+                      width: "100%",
+                      height: "auto",
+                      display: "block",
+                    }}
+                  />
+                  <a
+                    className="source-link"
+                    href="https://upload.wikimedia.org/wikipedia/commons/9/90/NP_India_burning_48_(6315309342).jpg"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      position: "absolute",
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      backgroundColor: "rgba(0,0,0,0.7)",
+                      color: "#fff",
+                      padding: "8px 12px",
+                      fontSize: "11px",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      textDecoration: "none",
+                      opacity: 0,
+                      transition: "opacity 0.3s ease",
+                    }}
+                  >
+                    Source: Wikimedia Commons
+                  </a>
+                </div>
               </div>
             </div>
 
@@ -4060,16 +4184,43 @@ export default function App() {
               }}
             >
               <div style={{ flex: 1, paddingRight: "40px", display: "flex", justifyContent: "flex-end" }}>
-                <img
-                  src="/image5.png"
-                  alt="Image 5"
-                  style={{
-                    width: "100%",
-                    maxWidth: "450px",
-                    height: "auto",
-                    display: "block",
-                  }}
-                />
+                <div
+                  style={{ position: "relative", maxWidth: "450px", width: "100%" }}
+                  onMouseEnter={(e) => e.currentTarget.querySelector('.source-link').style.opacity = 1}
+                  onMouseLeave={(e) => e.currentTarget.querySelector('.source-link').style.opacity = 0}
+                >
+                  <img
+                    src="/image5.png"
+                    alt="Image 5"
+                    style={{
+                      width: "100%",
+                      height: "auto",
+                      display: "block",
+                    }}
+                  />
+                  <a
+                    className="source-link"
+                    href="https://static.dw.com/image/73190652_1004.webp"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      position: "absolute",
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      backgroundColor: "rgba(0,0,0,0.7)",
+                      color: "#fff",
+                      padding: "8px 12px",
+                      fontSize: "11px",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      textDecoration: "none",
+                      opacity: 0,
+                      transition: "opacity 0.3s ease",
+                    }}
+                  >
+                    Source: DW
+                  </a>
+                </div>
               </div>
               {/* Dot on timeline */}
               <div
@@ -4094,7 +4245,7 @@ export default function App() {
                     textAlign: "left",
                   }}
                 >
-                Over the past three decades, Byrnihat has transformed from a small settlement into a major industrial hub. This town of roughly 50,000 residents hosts around 80 industries, many centered on iron and steel production. Its winding roads are crowded with long lines of trucks  some idling, others transporting materials to and from factories.Today, it carries the unwanted distinction of being ranked the world’s most polluted city by a Swiss air quality monitoring agency.   </p>
+                Over the past three decades, Byrnihat has transformed from a small settlement into a major industrial hub. This town of roughly 50,000 residents hosts around 80 industries, many centered on iron and steel production. Its winding roads are crowded with long lines of trucks  some idling, others transporting materials to and from factories.Today, it carries the unwanted distinction of being ranked the world's most polluted city by a Swiss air quality monitoring agency.   </p>
               </div>
             </div>
 
@@ -4133,16 +4284,43 @@ export default function App() {
                 }}
               />
               <div style={{ flex: 1, paddingLeft: "40px" }}>
-                <img
-                  src="/image6.jpg"
-                  alt="Image 6"
-                  style={{
-                    width: "100%",
-                    maxWidth: "450px",
-                    height: "auto",
-                    display: "block",
-                  }}
-                />
+                <div
+                  style={{ position: "relative", maxWidth: "450px", width: "100%" }}
+                  onMouseEnter={(e) => e.currentTarget.querySelector('.source-link').style.opacity = 1}
+                  onMouseLeave={(e) => e.currentTarget.querySelector('.source-link').style.opacity = 0}
+                >
+                  <img
+                    src="/image6.jpg"
+                    alt="Image 6"
+                    style={{
+                      width: "100%",
+                      height: "auto",
+                      display: "block",
+                    }}
+                  />
+                  <a
+                    className="source-link"
+                    href="https://www.hindustantimes.com/ht-img/img/2025/10/21/550x309/Pollution-Crackers-10_1761042960459_1761042970119.jpg"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      position: "absolute",
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      backgroundColor: "rgba(0,0,0,0.7)",
+                      color: "#fff",
+                      padding: "8px 12px",
+                      fontSize: "11px",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      textDecoration: "none",
+                      opacity: 0,
+                      transition: "opacity 0.3s ease",
+                    }}
+                  >
+                    Source: Hindustan Times
+                  </a>
+                </div>
               </div>
             </div>
 
@@ -4154,16 +4332,43 @@ export default function App() {
               }}
             >
               <div style={{ flex: 1, paddingRight: "40px", display: "flex", justifyContent: "flex-end" }}>
-                <img
-                  src="/image7.jpg"
-                  alt="Image 7"
-                  style={{
-                    width: "100%",
-                    maxWidth: "450px",
-                    height: "auto",
-                    display: "block",
-                  }}
-                />
+                <div
+                  style={{ position: "relative", maxWidth: "450px", width: "100%" }}
+                  onMouseEnter={(e) => e.currentTarget.querySelector('.source-link').style.opacity = 1}
+                  onMouseLeave={(e) => e.currentTarget.querySelector('.source-link').style.opacity = 0}
+                >
+                  <img
+                    src="/image7.jpg"
+                    alt="Image 7"
+                    style={{
+                      width: "100%",
+                      height: "auto",
+                      display: "block",
+                    }}
+                  />
+                  <a
+                    className="source-link"
+                    href="https://qz.com/cdn-cgi/image/width=1920,quality=85,format=auto/https://assets.qz.com/media/24632b4a6f33149276458e12e4ec1d74.jpg"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      position: "absolute",
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      backgroundColor: "rgba(0,0,0,0.7)",
+                      color: "#fff",
+                      padding: "8px 12px",
+                      fontSize: "11px",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      textDecoration: "none",
+                      opacity: 0,
+                      transition: "opacity 0.3s ease",
+                    }}
+                  >
+                    Source: Quartz
+                  </a>
+                </div>
               </div>
               {/* Dot on timeline */}
               <div
@@ -4733,6 +4938,18 @@ export default function App() {
             </div>
           </div>
           </div>
+          <div style={{ textAlign: "center", marginTop: "-60px", marginBottom: "40px" }}>
+            <p
+              style={{
+                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                fontSize: "11px",
+                color: "#888",
+                margin: 0,
+              }}
+            >
+              Reference: <a href="https://urbanemissions.info/wp-content/uploads/images/2019-12-NCAP-India_AQ_Timeline.png" target="_blank" rel="noopener noreferrer" style={{ color: "#5699af", textDecoration: "none" }}>Urban Emissions - India AQ Timeline</a>
+            </p>
+          </div>
 
           {/* Transition text after timeline */}
           <div
@@ -5010,17 +5227,22 @@ export default function App() {
                   >
                     The map of India on the left illustrates Air Quality Index (AQI) conditions across 2024. Each circular calendar represents a state or union territory, with radial lines showing daily AQI values throughout the year. Colors indicate pollution severity—blue tones for better air quality and pink tones for poorer conditions.
                   </p>
-                  <p
+                  <a
+                    href="https://www.kaggle.com/datasets/bhadramohit/india-air-quality-index2024-dataset"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       fontSize: "12px",
-                      color: "#888",
+                      color: "#5699af",
                       fontStyle: "italic",
                       marginBottom: 0,
+                      textDecoration: "none",
+                      display: "block",
                     }}
                   >
                     Source: Kaggle - India Air Quality Index 2024 Dataset
-                  </p>
+                  </a>
                 </div>
               </div>
 
@@ -5603,7 +5825,7 @@ export default function App() {
               justifyContent: "center",
               alignItems: "flex-start",
               padding: "60px 20px",
-              marginTop: "200px",
+              marginTop: "80px",
               background: "#fff",
             }}
           >
@@ -6050,7 +6272,7 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                       marginBottom: "15px",
                     }}
                   >
-                    The map reveals a dense concentration of population across the North Indian River Plain—spanning Uttar Pradesh, Bihar, and Delhi—one of the most crowded regions in the world.   </p>
+                    The map reveals a dense concentration of population across the North Indian River Plain spanning Uttar Pradesh, Bihar, and Delhi one of the most crowded regions in the world.   </p>
                   <p
                     style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
@@ -6187,6 +6409,35 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                       );
                     })}
                   </svg>
+                  <div style={{ marginTop: "15px" }}>
+                    <a
+                      href="https://aqli.epic.uchicago.edu/files/India%20FactSheet_2025_GlobalWV.pdf"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                        fontSize: "11px",
+                        color: "#5699af",
+                        textDecoration: "none",
+                        marginRight: "15px",
+                      }}
+                    >
+                      Source: AQLI
+                    </a>
+                    <a
+                      href="https://www.kaggle.com/datasets/bhadramohit/india-air-quality-index2024-dataset"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                        fontSize: "11px",
+                        color: "#5699af",
+                        textDecoration: "none",
+                      }}
+                    >
+                      Source: Kaggle
+                    </a>
+                  </div>
                 </div>
               </div>
 
@@ -6351,6 +6602,35 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                       );
                     })}
                   </svg>
+                  <div style={{ marginTop: "15px" }}>
+                    <a
+                      href="https://www.kaggle.com/datasets/bhadramohit/india-air-quality-index2024-dataset"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                        fontSize: "11px",
+                        color: "#5699af",
+                        textDecoration: "none",
+                        marginRight: "15px",
+                      }}
+                    >
+                      Source: Kaggle
+                    </a>
+                    <a
+                      href="https://hydro.imd.gov.in/hydrometweb/(S(4jwlae45z2suuuqf1ruew345))/PRODUCTS/Publications/Rainfall%20Statistics%20of%20India%20-%202024/Rainfall%20Statistics%20of%20India%202024.pdf"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                        fontSize: "11px",
+                        color: "#5699af",
+                        textDecoration: "none",
+                      }}
+                    >
+                      Source: IMD
+                    </a>
+                  </div>
                 </div>
               </div>
 
@@ -6408,6 +6688,21 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                   >
                     The animation shows wind patterns across India, revealing how air masses move across the subcontinent.
                   </p>
+                  <a
+                    href="https://www.kaggle.com/datasets/developerghost/climate-in-india-daily-weather-data-2000-2024/data"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "11px",
+                      color: "#5699af",
+                      textDecoration: "none",
+                      display: "block",
+                      marginTop: "10px",
+                    }}
+                  >
+                    Source: Kaggle - Climate in India
+                  </a>
                 </div>
               </div>
 
@@ -6440,7 +6735,7 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                       margin: 0,
                     }}
                   >
-                    How Geography Affects Air Quality
+                    The Himalayan Barrier
                   </h3>
                   <p
                     style={{
@@ -6508,6 +6803,19 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                 Each bar represents a city's monthly average AQI
               </p>
               <MonthlyAQICityChart />
+              <p
+                style={{
+                  fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                  fontSize: "12px",
+                  fontWeight: "400",
+                  color: "#888",
+                  lineHeight: "1.5",
+                  margin: "20px 0 0 0",
+                  textAlign: "left",
+                }}
+              >
+                Source: <a href="https://www.kaggle.com/datasets/bhadramohit/india-air-quality-index2024-dataset" target="_blank" rel="noopener noreferrer" style={{ color: "#5699af" }}>Kaggle - India Air Quality Index 2024 Dataset</a>
+              </p>
             </div>
 
             {/* Text */}
@@ -6523,20 +6831,6 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
               }}
             >
               Pollution levels also shift due to seasonal human activities. Summer typically has fewer fire-related emissions, but after the monsoon ends in September, crop burning begins as farmers clear fields for new planting. This practice releases large amounts of smoke and pollutants into the atmosphere, contributing to a sharp decline in air quality during the later months of the year. Forest fires during this period can further intensify pollution, creating hazardous conditions often observed from October through February. Additionally, colder winter temperatures increase the use of heating and cooking fires and trap pollutants closer to the ground, which helps explain the consistently higher pollution levels visible in the visualization during the winter season.
-            </p>
-            <p
-              style={{
-                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                fontSize: "12px",
-                fontWeight: "400",
-                color: "#888",
-                lineHeight: "1.5",
-                margin: "30px 0 0 0",
-                textAlign: "left",
-                maxWidth: "900px",
-              }}
-            >
-              Source: <a href="https://www.kaggle.com/datasets/bhadramohit/india-air-quality-index2024-dataset" target="_blank" rel="noopener noreferrer" style={{ color: "#5699af" }}>Kaggle - India Air Quality Index 2024 Dataset</a>
             </p>
           </div>
 
@@ -6812,6 +7106,17 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                   </div>
                 </div>
               )}
+              <p
+                style={{
+                  fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                  fontSize: "11px",
+                  color: "#888",
+                  marginTop: "15px",
+                  textAlign: "center",
+                }}
+              >
+                Source: <a href="https://www.kaggle.com/datasets/bhadramohit/india-air-quality-index2024-dataset" target="_blank" rel="noopener noreferrer" style={{ color: "#5699af", textDecoration: "none" }}>Kaggle - India Air Quality Index 2024 Dataset</a>
+              </p>
             </div>
 
             {/* Right - Scrolling pollutant descriptions */}
@@ -6828,37 +7133,37 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                   name: "PM10",
                   title: "PM10 - Coarse Particulate Matter",
                   color: "#c1616b",
-                  description: "PM10 refers to inhalable particles with diameters of 10 micrometers or smaller. These particles include dust, pollen, and mold spores. Primary sources include road dust, construction activities, and industrial processes. While larger particles are typically filtered by the nose and throat, they can still cause respiratory irritation and aggravate conditions like asthma. In India, road dust alone contributes 30-40% of PM10 pollution in many cities.",
+                  description: "PM10 refers to particulate matter smaller than 10 micrometers, often coming from visible and heavier sources such as road dust, construction sites, and industrial activity. Because these particles are larger, they settle more quickly and are usually trapped in the nose or throat when inhaled. While PM10 still affects air quality and can cause irritation, it is generally less able to penetrate deep into the body compared to finer particles.",
                 },
                 {
                   name: "PM2.5",
                   title: "PM2.5 - Fine Particulate Matter",
                   color: "#e07192",
-                  description: "PM2.5 particles are 2.5 micrometers or smaller - about 30 times smaller than a human hair. These fine particles penetrate deep into the lungs and can enter the bloodstream, causing cardiovascular and respiratory diseases. Major sources include vehicle emissions, power plants, crop burning, and industrial activities. PM2.5 is considered the most dangerous air pollutant for human health, responsible for millions of premature deaths globally each year.",
+                  description: "PM2.5, on the other hand, includes particles smaller than 2.5 micrometers, nearly 30 times thinner than a human hair. These fine particles mainly come from fuel combustion, vehicle exhaust, crop burning, and industrial smoke. Because they are so light, they remain suspended in the air longer, spread easily across cities, and can travel deep into the lungs and even enter the bloodstream. This makes PM2.5 far more dangerous, strongly linked to asthma, heart disease, and respiratory infections. In Indian cities, PM2.5 is often the main driver of “poor” or “severe” AQI levels, especially in winter when low winds and temperature inversion trap pollution near the ground.",
                 },
                 {
                   name: "O3",
                   title: "O₃ - Ground-Level Ozone",
                   color: "#de9eaf",
-                  description: "Unlike stratospheric ozone which protects us from UV radiation, ground-level ozone is harmful. It forms when nitrogen oxides (NOx) and volatile organic compounds (VOCs) react in sunlight. Ozone levels are typically highest during hot, sunny afternoons. Exposure can trigger chest pain, coughing, throat irritation, and worsen bronchitis, emphysema, and asthma. It also damages crops and vegetation.",
+                  description: "Ground-level ozone, a major component of smog, is highly harmful to plants. It damages leaves, suppresses growth, and can injure or even kill vegetation, reducing crop productivity. This pollutant forms when nitrogen oxides, carbon monoxide, and volatile organic compounds released from vehicles, industries, cooking stoves, and biomass burning react in sunlight. Despite its serious threat to agriculture, India currently lacks air quality standards specifically aimed at protecting crops from ground-level ozone exposure. A 2005 study examined the agricultural impacts of high ground-level ozone concentrations in India. It highlights that rising emissions have led to severe ozone pollution across some of India’s most densely populated regions. In Delhi, ozone and smog levels have reached intensities comparable to Beijing, one of the world’s most polluted cities.",
                 },
                 {
                   name: "CO",
                   title: "CO - Carbon Monoxide",
                   color: "#dfbfc6",
-                  description: "Carbon monoxide is a colorless, odorless gas produced by incomplete combustion of carbon-containing fuels. Major sources include vehicle exhaust, industrial processes, and residential heating. CO reduces oxygen delivery to the body's organs and tissues. At high levels, it can cause dizziness, confusion, unconsciousness, and death. People with heart disease are particularly vulnerable to even moderate CO levels.",
+                  description: "Carbon monoxide (CO) is a toxic trace gas released mainly through the incomplete combustion of fossil fuels, and it poses a serious risk to human health. Studies show strong seasonal variation in CO levels across India, with the highest concentrations occurring in winter. This suggests that colder temperatures are closely linked to increased CO emissions. When comparing state capitals, cities such as Delhi, Patna, Mumbai, Bengaluru, Jaipur, Lucknow, Chennai, and Bhopal consistently rank among the highest CO emitters. These patterns can help policymakers identify priority regions for emission control and air quality improvement. Research also finds that temperature has a clear negative relationship with CO levels—warmer conditions generally reduce CO concentrations—while factors like humidity and wind show only a moderate influence. Health risk assessments highlight Delhi as facing the greatest non-carcinogenic risk from CO exposure (29.8%), followed by Chandigarh (13.5%) and Patna (13.4%). Overall, these findings emphasize the need for targeted seasonal strategies to reduce CO pollution and protect public health in India’s major urban centers.",
                 },
                 {
                   name: "SO2",
                   title: "SO₂ - Sulphur Dioxide",
                   color: "#87beb1",
-                  description: "Sulphur dioxide is primarily produced by burning fossil fuels containing sulfur, particularly coal and oil. Power plants, refineries, and metal processing facilities are major sources. SO₂ irritates the respiratory system and can trigger asthma attacks. In the atmosphere, it converts to sulfuric acid, contributing to acid rain which damages ecosystems, buildings, and monuments. India's coal-heavy energy sector makes SO₂ a significant concern.",
+                  description: "Sulphur dioxide (SO₂) is released into the atmosphere from both natural and human-made sources. Naturally, it can originate from volcanic activity and the decay of organic matter in soils. However, most urban SO₂ emissions come from the combustion of fossil fuels, since coal and oil contain sulphur compounds. Major contributors include oil refineries, automobiles, thermal power plants, smelters, and industrial facilities. During the 1960s–1980s, SO₂ was considered one of India’s most critical air pollutants, largely driven by rapid industrialization and growing urban transport. NEERI studies show that SO₂ levels declined in many cities after 1980, partly because cleaner fuels like LPG replaced wood, coal, and kerosene for cooking. However, cities such as Lucknow, Delhi experienced rising SO₂ emissions due to continued industrial and urban expansion.",
                 },
                 {
                   name: "NO2",
                   title: "NO₂ - Nitrogen Dioxide",
                   color: "#5699af",
-                  description: "Nitrogen dioxide is a reddish-brown gas with a pungent odor. It forms primarily from vehicle emissions and power plant combustion. NO₂ inflames airways, reducing lung function and increasing susceptibility to respiratory infections. It also contributes to the formation of ground-level ozone and fine particulate matter. Urban areas with heavy traffic typically have the highest NO₂ concentrations.",
+                  description: "Nitrogen oxides (NOx), mainly nitric oxide (NO) and nitrogen dioxide (NO₂), are major urban air pollutants. NO₂ is a reddish-brown corrosive gas primarily produced during fuel combustion, making automobile exhaust one of its largest sources. Significant emissions also come from industries where nitric acid is produced or used. Although NO₂ remains in the atmosphere only for a few days, it contributes to the formation of harmful compounds such as nitric acid and nitrates, and it also plays a key role in producing ground-level ozone. Since the 1990s, NO₂ levels have risen sharply in major Indian cities, with pollution peaks closely aligning with traffic rush hours. NEERI studies estimate that traffic contributes over half of total NO₂ emissions in cities like Mumbai. While annual averages may still fall within permissible limits in many areas, maximum concentrations in several towns and industrial regions have already exceeded safe standards, signaling a growing air quality concern.",
                 },
               ].map((pollutant, index) => (
                 <div
@@ -7166,7 +7471,7 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
       {(
         <div
           style={{
-            padding: "80px 120px",
+            padding: "20px 120px 80px 120px",
             backgroundColor: "#fff",
           }}
         >
@@ -7557,6 +7862,21 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                 </p>
               </div>
             ))}
+          </div>
+          <div style={{ textAlign: "center", marginTop: "20px" }}>
+            <a
+              href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5392152"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                fontSize: "12px",
+                color: "#5699af",
+                textDecoration: "none",
+              }}
+            >
+              Source: SSRN
+            </a>
           </div>
         </div>
       )}

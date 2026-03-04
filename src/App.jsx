@@ -2,9 +2,14 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import * as d3 from "d3";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 import "./App.css";
 import { CircularVizMap, LifeExpectancyPlot } from "./components/map/StateAQIMap";
 import MonthlyAQICityChart from "./components/MonthlyAQICityChart";
+
+// Mapbox access token - using public demo token
+mapboxgl.accessToken = "pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw";
 
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger);
@@ -17,6 +22,7 @@ export default function App() {
   const [tooltip, setTooltip] = useState(null);
   const [selectedAreas, setSelectedAreas] = useState({}); // { stateName: areaName }
   const [activeStateIndex, setActiveStateIndex] = useState(0);
+  const [mapCentroids, setMapCentroids] = useState(null); // Computed state centroids for map overlay
   const stateRefs = useRef([]);
   const [imageExpanded, setImageExpanded] = useState(false);
   const [colorizedCount, setColorizedCount] = useState(0); // 0, 1, 2, or 3
@@ -38,6 +44,7 @@ export default function App() {
   const [lifeExpData, setLifeExpData] = useState([]); // life expectancy data for visualization
   const [populationData, setPopulationData] = useState([]); // population data by state (includes rainfall)
   const [windData, setWindData] = useState([]); // wind direction data by city for 2024
+  const [windMapLoaded, setWindMapLoaded] = useState(false); // track when wind map SVG is loaded
   const [statePollutantData, setStatePollutantData] = useState([]); // pollutant breakdown by state
   const [hoveredRadialState, setHoveredRadialState] = useState(null); // hovered state in radial chart
   const [radialTooltipPos, setRadialTooltipPos] = useState({ x: 0, y: 0 }); // tooltip position for radial chart
@@ -86,6 +93,7 @@ export default function App() {
   };
   const indiaMapRef = useRef(null); // ref for India map SVG object
   const populationMapRef = useRef(null); // ref for population India map SVG
+  const standAloneAqiMapRef = useRef(null); // ref for standalone AQI map
   const rainfallMapRef = useRef(null); // ref for rainfall map SVG
   const introRef = useRef(null);
   const imagesSectionRef = useRef(null);
@@ -102,6 +110,8 @@ export default function App() {
   const rainfallTextRef = useRef(null); // ref for rainfall text section
   const windTextRef = useRef(null); // ref for wind text section
   const windMapRef = useRef(null); // ref for wind map SVG
+  const windMapboxContainerRef = useRef(null); // ref for Mapbox container
+  const windMapboxRef = useRef(null); // ref for Mapbox map instance
   const pollutantRefs = useRef([]);
   const sourcesScrollRef = useRef(null);
   const cyclingRef = useRef(null); // ref for cycling animation section
@@ -528,9 +538,9 @@ export default function App() {
       });
   }, []);
 
-  // Render wind arrows on map when windData changes
+  // Render animated wind arrows on map when Wind tab is active
   useEffect(() => {
-    if (!windMapRef.current || windData.length === 0) return;
+    if (!windMapRef.current || windData.length === 0 || activeScatterIndex !== 2) return;
 
     const svgDoc = windMapRef.current.contentDocument;
     if (!svgDoc) return;
@@ -543,20 +553,56 @@ export default function App() {
       path.style.strokeWidth = "0.5";
     });
 
-    // Remove existing wind arrows
+    // Remove existing wind arrows and animations
     const existingArrows = svgDoc.querySelectorAll(".wind-arrow");
     existingArrows.forEach(a => a.remove());
+    const existingDefs = svgDoc.querySelector("defs.wind-animations");
+    if (existingDefs) existingDefs.remove();
 
     // Get SVG dimensions for coordinate conversion
     const svgElement = svgDoc.querySelector("svg");
     if (!svgElement) return;
-    const viewBox = svgElement.getAttribute("viewBox")?.split(" ").map(Number) || [0, 0, 600, 700];
+    const viewBox = svgElement.getAttribute("viewBox")?.split(" ").map(Number) || [0, 0, 612, 696];
     const svgWidth = viewBox[2];
     const svgHeight = viewBox[3];
 
     // Lat/long bounds for India (approximate)
     const latMin = 6, latMax = 37;
     const lonMin = 68, lonMax = 98;
+
+    // Add CSS animations via style element
+    let styleEl = svgDoc.querySelector("style.wind-style");
+    if (!styleEl) {
+      styleEl = document.createElementNS("http://www.w3.org/2000/svg", "style");
+      styleEl.setAttribute("class", "wind-style");
+      styleEl.textContent = `
+        @keyframes pulseGust {
+          0%, 100% { opacity: 0.15; transform: scale(1); }
+          50% { opacity: 0.4; transform: scale(1.15); }
+        }
+        @keyframes flowArrow {
+          0% { stroke-dashoffset: 20; }
+          100% { stroke-dashoffset: 0; }
+        }
+        @keyframes rotateRing {
+          0% { stroke-dashoffset: 0; }
+          100% { stroke-dashoffset: 12; }
+        }
+        .wind-gust-ring {
+          animation: pulseGust 2s ease-in-out infinite;
+          transform-origin: center;
+          transform-box: fill-box;
+        }
+        .wind-flow-line {
+          stroke-dasharray: 5, 3;
+          animation: flowArrow 0.8s linear infinite;
+        }
+        .wind-rotating-ring {
+          animation: rotateRing 1.5s linear infinite;
+        }
+      `;
+      svgElement.insertBefore(styleEl, svgElement.firstChild);
+    }
 
     // Calculate speed and gust range for sizing
     const speeds = windData.map(d => d.speed);
@@ -567,7 +613,7 @@ export default function App() {
     const minGust = Math.min(...gusts);
 
     // Add wind direction arrows for each city
-    windData.forEach((cityData) => {
+    windData.forEach((cityData, idx) => {
       const { lat, lon, direction, speed, gust } = cityData;
 
       // Convert lat/lon to SVG coordinates
@@ -587,7 +633,7 @@ export default function App() {
       g.setAttribute("class", "wind-arrow");
       g.setAttribute("transform", `translate(${x}, ${y}) rotate(${direction})`);
 
-      // Gust ring (outer semi-transparent ring showing gust intensity)
+      // Animated gust ring (pulsing outer ring)
       const gustRing = document.createElementNS("http://www.w3.org/2000/svg", "circle");
       gustRing.setAttribute("cx", 0);
       gustRing.setAttribute("cy", 0);
@@ -595,10 +641,24 @@ export default function App() {
       gustRing.setAttribute("fill", "#5699af");
       gustRing.setAttribute("fill-opacity", "0.2");
       gustRing.setAttribute("stroke", "#3d9bb2");
-      gustRing.setAttribute("stroke-width", "1");
+      gustRing.setAttribute("stroke-width", "1.5");
       gustRing.setAttribute("stroke-dasharray", "4,2");
+      gustRing.setAttribute("class", "wind-gust-ring");
+      gustRing.style.animationDelay = `${idx * 0.2}s`;
 
-      // Arrow line
+      // Animated rotating dashed ring
+      const rotatingRing = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      rotatingRing.setAttribute("cx", 0);
+      rotatingRing.setAttribute("cy", 0);
+      rotatingRing.setAttribute("r", gustRadius * 0.7);
+      rotatingRing.setAttribute("fill", "none");
+      rotatingRing.setAttribute("stroke", "#5699af");
+      rotatingRing.setAttribute("stroke-width", "1");
+      rotatingRing.setAttribute("stroke-dasharray", "3,3");
+      rotatingRing.setAttribute("class", "wind-rotating-ring");
+      rotatingRing.style.animationDuration = `${1 + speedIntensity}s`;
+
+      // Animated arrow line (flowing dashes)
       const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
       line.setAttribute("x1", 0);
       line.setAttribute("y1", 0);
@@ -607,6 +667,19 @@ export default function App() {
       line.setAttribute("stroke", "#3d9bb2");
       line.setAttribute("stroke-width", "3");
       line.setAttribute("stroke-linecap", "round");
+      line.setAttribute("class", "wind-flow-line");
+      line.style.animationDuration = `${0.5 + (1 - speedIntensity) * 0.5}s`;
+
+      // Static base line for visibility
+      const baseLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      baseLine.setAttribute("x1", 0);
+      baseLine.setAttribute("y1", 0);
+      baseLine.setAttribute("x2", 0);
+      baseLine.setAttribute("y2", -arrowLength);
+      baseLine.setAttribute("stroke", "#3d9bb2");
+      baseLine.setAttribute("stroke-width", "1.5");
+      baseLine.setAttribute("stroke-opacity", "0.4");
+      baseLine.setAttribute("stroke-linecap", "round");
 
       // Arrow head
       const arrowHead = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
@@ -624,12 +697,589 @@ export default function App() {
       circle.setAttribute("stroke-width", "1.5");
 
       g.appendChild(gustRing);
+      g.appendChild(rotatingRing);
+      g.appendChild(baseLine);
       g.appendChild(line);
       g.appendChild(arrowHead);
       g.appendChild(circle);
       svgElement.appendChild(g);
     });
-  }, [windData]);
+  }, [windData, activeScatterIndex, windMapLoaded]);
+
+  // Initialize Mapbox map for all visualization tabs (Population, Climate, Wind, Geography)
+  useEffect(() => {
+    // Only initialize when container is available
+    if (!windMapboxContainerRef.current) return;
+
+    // Don't reinitialize if map already exists
+    if (windMapboxRef.current) {
+      return;
+    }
+
+    // Create the map with grey terrain style
+    const map = new mapboxgl.Map({
+      container: windMapboxContainerRef.current,
+      style: {
+        version: 8,
+        sources: {
+          "raster-tiles": {
+            type: "raster",
+            tiles: [
+              "https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}"
+            ],
+            tileSize: 256,
+            attribution: "Tiles &copy; Esri"
+          }
+        },
+        layers: [
+          {
+            id: "simple-tiles",
+            type: "raster",
+            source: "raster-tiles",
+            minzoom: 0,
+            maxzoom: 22,
+            paint: {
+              "raster-saturation": -1, // Make it greyscale
+              "raster-contrast": 0.1,
+              "raster-brightness-min": 0.1,
+              "raster-brightness-max": 0.9
+            }
+          }
+        ]
+      },
+      center: [82, 22], // Center of India
+      zoom: 4,
+      minZoom: 3.5,
+      maxZoom: 6,
+      interactive: false, // Disable interactions for cleaner visualization
+      attributionControl: false
+    });
+
+    windMapboxRef.current = map;
+
+    map.on("load", () => {
+      // Resize map to fit container
+      map.resize();
+
+      // Fit bounds to India
+      map.fitBounds([
+        [68, 6],   // Southwest corner (lon, lat)
+        [98, 37]   // Northeast corner (lon, lat)
+      ], {
+        padding: 20,
+        duration: 0
+      });
+
+      // Add India state boundaries from GeoJSON
+      fetch("https://raw.githubusercontent.com/geohacker/india/master/state/india_state.geojson")
+        .then(response => response.json())
+        .then(data => {
+          map.addSource("india-states", {
+            type: "geojson",
+            data: data
+          });
+
+          // Add state boundary lines
+          map.addLayer({
+            id: "india-state-boundaries",
+            type: "line",
+            source: "india-states",
+            paint: {
+              "line-color": "#666",
+              "line-width": 0.25,
+              "line-opacity": 0.6
+            }
+          });
+
+          // Add subtle fill for states
+          map.addLayer({
+            id: "india-state-fill",
+            type: "fill",
+            source: "india-states",
+            paint: {
+              "fill-color": "#fff",
+              "fill-opacity": 0.1
+            }
+          }, "india-state-boundaries");
+        })
+        .catch(err => console.error("Error loading India states GeoJSON:", err));
+
+      // Add disputed territories (Jammu & Kashmir, Ladakh with Aksai Chin, Arunachal Pradesh claim line)
+      const disputedBoundaries = {
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            properties: { name: "Line of Control (LoC)" },
+            geometry: {
+              type: "LineString",
+              coordinates: [
+                [73.5, 32.5], [74.0, 33.0], [74.5, 33.5], [75.0, 34.0], [75.5, 34.5],
+                [76.0, 35.0], [76.5, 35.3], [77.0, 35.5], [77.8, 35.5]
+              ]
+            }
+          },
+          {
+            type: "Feature",
+            properties: { name: "Line of Actual Control (LAC) - Aksai Chin" },
+            geometry: {
+              type: "LineString",
+              coordinates: [
+                [77.8, 35.5], [78.5, 35.2], [79.0, 34.8], [79.5, 34.5], [80.0, 34.0],
+                [80.2, 33.5], [80.0, 33.0], [79.5, 32.5], [79.0, 32.0], [78.8, 31.5]
+              ]
+            }
+          },
+          {
+            type: "Feature",
+            properties: { name: "India Claimed Boundary - North" },
+            geometry: {
+              type: "LineString",
+              coordinates: [
+                [73.5, 36.9], [74.5, 36.8], [75.5, 36.5], [76.5, 36.2], [77.5, 36.0],
+                [78.5, 35.8], [79.5, 35.5], [80.5, 35.0], [80.2, 33.5]
+              ]
+            }
+          },
+          {
+            type: "Feature",
+            properties: { name: "McMahon Line - Arunachal Pradesh" },
+            geometry: {
+              type: "LineString",
+              coordinates: [
+                [91.5, 28.0], [92.0, 28.2], [92.5, 28.3], [93.0, 28.5], [93.5, 28.3],
+                [94.0, 28.5], [94.5, 28.7], [95.0, 28.5], [96.0, 28.2], [97.0, 28.0]
+              ]
+            }
+          }
+        ]
+      };
+
+      map.addSource("disputed-boundaries", {
+        type: "geojson",
+        data: disputedBoundaries
+      });
+
+      // Add disputed boundary lines (dashed)
+      map.addLayer({
+        id: "disputed-boundary-lines",
+        type: "line",
+        source: "disputed-boundaries",
+        paint: {
+          "line-color": "#888",
+          "line-width": 1,
+          "line-opacity": 0.7,
+          "line-dasharray": [3, 2]
+        }
+      });
+
+      // Add Himalayan mountain range label (hidden by default, shown only for Geography)
+      const himalayaLabel = document.createElement("div");
+      himalayaLabel.className = "himalaya-label";
+      himalayaLabel.style.cssText = `
+        font-family: Avenir, 'Avenir Next', Helvetica, Arial, sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        color: #555;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        white-space: nowrap;
+        transform: rotate(-8deg);
+        text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+      `;
+      himalayaLabel.textContent = "Himalayan Mountain Range";
+      new mapboxgl.Marker({ element: himalayaLabel, anchor: "center" })
+        .setLngLat([82, 30.5])
+        .addTo(map);
+      map._himalayaLabel = himalayaLabel;
+
+      // Add wind speed legend
+      const legendContainer = document.createElement("div");
+      legendContainer.className = "wind-legend";
+      legendContainer.style.cssText = `
+        position: absolute;
+        bottom: 30px;
+        left: 10px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 10px 12px;
+        border-radius: 6px;
+        font-family: Avenir, 'Avenir Next', Helvetica, Arial, sans-serif;
+        font-size: 11px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        z-index: 10;
+      `;
+      legendContainer.innerHTML = `
+        <div style="font-weight: 600; margin-bottom: 6px; color: #333;">Wind Speed</div>
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+          <div style="width: 20px; height: 3px; background: #c1616b; border-radius: 2px;"></div>
+          <span style="color: #666;">Slow</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+          <div style="width: 20px; height: 3px; background: #de9eaf; border-radius: 2px;"></div>
+          <span style="color: #666;">Moderate</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+          <div style="width: 20px; height: 3px; background: #87beb1; border-radius: 2px;"></div>
+          <span style="color: #666;">Fast</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <div style="width: 20px; height: 3px; background: #5699af; border-radius: 2px;"></div>
+          <span style="color: #666;">Very Fast</span>
+        </div>
+      `;
+      map.getContainer().appendChild(legendContainer);
+      map._windLegend = legendContainer;
+
+      // Create animated wind flow canvas overlay (for Wind and Geography sections)
+      if (windData.length > 0 && (activeScatterIndex === 2 || activeScatterIndex === 3)) {
+        const canvas = document.createElement("canvas");
+        canvas.id = "wind-canvas";
+        canvas.style.position = "absolute";
+        canvas.style.top = "0";
+        canvas.style.left = "0";
+        canvas.style.pointerEvents = "none";
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
+
+        const container = map.getContainer();
+        canvas.width = container.offsetWidth * 2;
+        canvas.height = container.offsetHeight * 2;
+        canvas.style.width = container.offsetWidth + "px";
+        canvas.style.height = container.offsetHeight + "px";
+        container.appendChild(canvas);
+
+        const ctx = canvas.getContext("2d");
+        ctx.scale(2, 2);
+
+        const speeds = windData.map(d => d.speed);
+        const gusts = windData.map(d => d.gust);
+        const maxSpeed = Math.max(...speeds);
+        const minSpeed = Math.min(...speeds);
+        const maxGust = Math.max(...gusts);
+        const minGust = Math.min(...gusts);
+
+        // Color scale based on wind speed (pink for slow, blue for fast)
+        const getSpeedColor = (speed, alpha) => {
+          const intensity = (speed - minSpeed) / (maxSpeed - minSpeed);
+          if (intensity < 0.25) return `rgba(193, 97, 107, ${alpha})`;      // Red/Pink - slowest
+          if (intensity < 0.5) return `rgba(222, 158, 175, ${alpha})`;      // Light pink
+          if (intensity < 0.75) return `rgba(135, 190, 177, ${alpha})`;     // Teal
+          return `rgba(86, 153, 175, ${alpha})`;                             // Blue - fastest
+        };
+
+        // Get wind at geographic position by interpolating from cities
+        const getWindAtPosition = (lng, lat) => {
+          let totalWeight = 0;
+          let dirX = 0, dirY = 0, speed = 0, gust = 0;
+
+          windData.forEach(city => {
+            const dx = lng - city.lon;
+            const dy = lat - city.lat;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const weight = 1 / (dist * dist + 0.5);
+
+            const rad = (city.direction - 90) * Math.PI / 180;
+            dirX += Math.cos(rad) * weight;
+            dirY += Math.sin(rad) * weight;
+            speed += city.speed * weight;
+            gust += city.gust * weight;
+            totalWeight += weight;
+          });
+
+          return {
+            dx: dirX / totalWeight,
+            dy: dirY / totalWeight,
+            speed: speed / totalWeight,
+            gust: gust / totalWeight
+          };
+        };
+
+        // Spawn particle near a city (in geographic coordinates)
+        const spawnParticle = () => {
+          const city = windData[Math.floor(Math.random() * windData.length)];
+          return {
+            lng: city.lon + (Math.random() - 0.5) * 8,
+            lat: city.lat + (Math.random() - 0.5) * 8,
+            age: 0,
+            maxAge: 80 + Math.random() * 120,
+            trail: []
+          };
+        };
+
+        // Create particles in geographic coordinates
+        const numParticles = 1200;
+        const particles = [];
+        for (let i = 0; i < numParticles; i++) {
+          particles.push(spawnParticle());
+        }
+
+        // Animation loop
+        let animationId;
+        const animate = () => {
+          ctx.clearRect(0, 0, container.offsetWidth, container.offsetHeight);
+
+          const bounds = map.getBounds();
+          const visibleMinLng = bounds.getWest();
+          const visibleMaxLng = bounds.getEast();
+          const visibleMinLat = bounds.getSouth();
+          const visibleMaxLat = bounds.getNorth();
+
+          particles.forEach(p => {
+            // Get wind at current position
+            const wind = getWindAtPosition(p.lng, p.lat);
+            const speedFactor = (wind.speed - minSpeed) / (maxSpeed - minSpeed);
+
+            // Move in geographic space (scale by zoom-independent amount)
+            const moveScale = 0.015 + speedFactor * 0.025;
+            p.lng += wind.dx * moveScale;
+            p.lat -= wind.dy * moveScale; // Negative because lat increases northward
+
+            // Convert to screen coordinates
+            const screenPos = map.project([p.lng, p.lat]);
+
+            // Store trail in screen coordinates
+            if (!p.trail) p.trail = [];
+            p.trail.push({ x: screenPos.x, y: screenPos.y });
+            if (p.trail.length > 15) p.trail.shift();
+
+            // Check if visible
+            const isVisible = p.lng >= visibleMinLng && p.lng <= visibleMaxLng &&
+                             p.lat >= visibleMinLat && p.lat <= visibleMaxLat;
+
+            if (isVisible && p.trail.length > 1) {
+              const baseAlpha = Math.min(0.7, (p.maxAge - p.age) / 40, p.age / 10);
+              ctx.lineWidth = 1 + speedFactor * 0.8;
+              ctx.lineCap = "round";
+              ctx.lineJoin = "round";
+
+              // Draw trail
+              for (let i = 1; i < p.trail.length; i++) {
+                const alpha = baseAlpha * (i / p.trail.length);
+                ctx.strokeStyle = getSpeedColor(wind.speed, alpha);
+                ctx.beginPath();
+                ctx.moveTo(p.trail[i - 1].x, p.trail[i - 1].y);
+                ctx.lineTo(p.trail[i].x, p.trail[i].y);
+                ctx.stroke();
+              }
+            }
+
+            p.age++;
+
+            // Respawn if too old or out of India bounds
+            const outOfBounds = p.lng < 68 || p.lng > 98 || p.lat < 6 || p.lat > 37;
+            if (p.age > p.maxAge || outOfBounds) {
+              const newP = spawnParticle();
+              p.lng = newP.lng; p.lat = newP.lat;
+              p.age = 0; p.maxAge = newP.maxAge; p.trail = [];
+            }
+          });
+
+          animationId = requestAnimationFrame(animate);
+        };
+
+        animate();
+
+        map._windAnimationId = animationId;
+        map._windCanvas = canvas;
+      }
+    });
+
+    // Cleanup - only on unmount, not when switching between Wind/Geography
+  }, [activeScatterIndex, windData]);
+
+  // Show/hide Himalayan label based on active section
+  useEffect(() => {
+    const showHideLabel = () => {
+      if (!windMapboxRef.current || !windMapboxRef.current._himalayaLabel) return;
+
+      const label = windMapboxRef.current._himalayaLabel;
+      if (activeScatterIndex === 3) {
+        // Show label for Geography section
+        label.style.opacity = "1";
+      } else {
+        // Hide label for other sections
+        label.style.opacity = "0";
+      }
+    };
+
+    // Try immediately and also with a delay (in case map is still loading)
+    showHideLabel();
+    const timeoutId = setTimeout(showHideLabel, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [activeScatterIndex]);
+
+  // Create/destroy wind canvas when switching to/from Wind and Geography tabs
+  useEffect(() => {
+    const map = windMapboxRef.current;
+    if (!map || !map.loaded() || windData.length === 0) return;
+
+    const shouldShowWind = activeScatterIndex === 2 || activeScatterIndex === 3;
+
+    // If we should show wind and canvas doesn't exist, create it
+    if (shouldShowWind && !map._windCanvas) {
+      const canvas = document.createElement("canvas");
+      canvas.id = "wind-canvas";
+      canvas.style.position = "absolute";
+      canvas.style.top = "0";
+      canvas.style.left = "0";
+      canvas.style.pointerEvents = "none";
+      canvas.style.width = "100%";
+      canvas.style.height = "100%";
+
+      const container = map.getContainer();
+      canvas.width = container.offsetWidth * 2;
+      canvas.height = container.offsetHeight * 2;
+      canvas.style.width = container.offsetWidth + "px";
+      canvas.style.height = container.offsetHeight + "px";
+      container.appendChild(canvas);
+
+      const ctx = canvas.getContext("2d");
+      ctx.scale(2, 2);
+
+      const speeds = windData.map(d => d.speed);
+      const maxSpeed = Math.max(...speeds);
+      const minSpeed = Math.min(...speeds);
+
+      const getSpeedColor = (speed, alpha) => {
+        const intensity = (speed - minSpeed) / (maxSpeed - minSpeed || 1);
+        if (intensity < 0.25) return `rgba(193, 97, 107, ${alpha})`;
+        if (intensity < 0.5) return `rgba(222, 158, 175, ${alpha})`;
+        if (intensity < 0.75) return `rgba(135, 190, 177, ${alpha})`;
+        return `rgba(86, 153, 175, ${alpha})`;
+      };
+
+      const getWindAtPosition = (lng, lat) => {
+        let totalWeight = 0;
+        let dirX = 0, dirY = 0, speed = 0;
+
+        windData.forEach(city => {
+          const dx = lng - city.lon;
+          const dy = lat - city.lat;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const weight = 1 / (dist * dist + 0.5);
+
+          const rad = (city.direction - 90) * Math.PI / 180;
+          dirX += Math.cos(rad) * weight;
+          dirY += Math.sin(rad) * weight;
+          speed += city.speed * weight;
+          totalWeight += weight;
+        });
+
+        return { dx: dirX / totalWeight, dy: dirY / totalWeight, speed: speed / totalWeight };
+      };
+
+      const spawnParticle = () => {
+        const city = windData[Math.floor(Math.random() * windData.length)];
+        return {
+          lng: city.lon + (Math.random() - 0.5) * 8,
+          lat: city.lat + (Math.random() - 0.5) * 8,
+          age: 0,
+          maxAge: 80 + Math.random() * 120,
+          trail: []
+        };
+      };
+
+      const particles = [];
+      for (let i = 0; i < 1200; i++) {
+        particles.push(spawnParticle());
+      }
+
+      const animate = () => {
+        ctx.clearRect(0, 0, container.offsetWidth, container.offsetHeight);
+
+        const bounds = map.getBounds();
+        const visibleMinLng = bounds.getWest();
+        const visibleMaxLng = bounds.getEast();
+        const visibleMinLat = bounds.getSouth();
+        const visibleMaxLat = bounds.getNorth();
+
+        particles.forEach(p => {
+          const wind = getWindAtPosition(p.lng, p.lat);
+          const speedFactor = (wind.speed - minSpeed) / (maxSpeed - minSpeed || 1);
+
+          const moveScale = 0.015 + speedFactor * 0.025;
+          p.lng += wind.dx * moveScale;
+          p.lat -= wind.dy * moveScale;
+
+          const screenPos = map.project([p.lng, p.lat]);
+
+          if (!p.trail) p.trail = [];
+          p.trail.push({ x: screenPos.x, y: screenPos.y });
+          if (p.trail.length > 15) p.trail.shift();
+
+          const isVisible = p.lng >= visibleMinLng && p.lng <= visibleMaxLng &&
+                           p.lat >= visibleMinLat && p.lat <= visibleMaxLat;
+
+          if (isVisible && p.trail.length > 1) {
+            const baseAlpha = Math.min(0.7, (p.maxAge - p.age) / 40, p.age / 10);
+            ctx.lineWidth = 1 + speedFactor * 0.8;
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+
+            for (let i = 1; i < p.trail.length; i++) {
+              const alpha = baseAlpha * (i / p.trail.length);
+              ctx.strokeStyle = getSpeedColor(wind.speed, alpha);
+              ctx.beginPath();
+              ctx.moveTo(p.trail[i - 1].x, p.trail[i - 1].y);
+              ctx.lineTo(p.trail[i].x, p.trail[i].y);
+              ctx.stroke();
+            }
+          }
+
+          p.age++;
+
+          const outOfBounds = p.lng < 68 || p.lng > 98 || p.lat < 6 || p.lat > 37;
+          if (p.age > p.maxAge || outOfBounds) {
+            const newP = spawnParticle();
+            p.lng = newP.lng; p.lat = newP.lat;
+            p.age = 0; p.maxAge = newP.maxAge; p.trail = [];
+          }
+        });
+
+        map._windAnimationId = requestAnimationFrame(animate);
+      };
+
+      animate();
+      map._windCanvas = canvas;
+    }
+
+    // If we shouldn't show wind and canvas exists, destroy it
+    if (!shouldShowWind && map._windCanvas) {
+      if (map._windAnimationId) {
+        cancelAnimationFrame(map._windAnimationId);
+        map._windAnimationId = null;
+      }
+      map._windCanvas.remove();
+      map._windCanvas = null;
+    }
+
+    // Show/hide wind legend
+    if (map._windLegend) {
+      map._windLegend.style.display = shouldShowWind ? "block" : "none";
+    }
+  }, [activeScatterIndex, windData]);
+
+  // Separate cleanup effect for component unmount only
+  useEffect(() => {
+    return () => {
+      if (windMapboxRef.current) {
+        if (windMapboxRef.current._windAnimationId) {
+          cancelAnimationFrame(windMapboxRef.current._windAnimationId);
+        }
+        if (windMapboxRef.current._windCanvas) {
+          windMapboxRef.current._windCanvas.remove();
+        }
+        windMapboxRef.current.remove();
+        windMapboxRef.current = null;
+      }
+    };
+  }, []);
+
+  // Wind and Geography sections now show the same view - no zoom effect needed
 
   // Render rainfall bubbles on map using state-level rainfall data from populationData
   useEffect(() => {
@@ -1804,7 +2454,7 @@ export default function App() {
               y2={outerY}
               stroke={color}
               strokeWidth={dashWidth}
-              opacity={0.7}
+              opacity={1}
               style={{ cursor: disableTooltips ? "default" : "pointer" }}
               onMouseEnter={disableTooltips ? undefined : (e) => {
                 if (dayInfo.status) {
@@ -2427,12 +3077,12 @@ export default function App() {
             }}
           >
             <p>
-            India is confronting an uncomfortable truth: bad air is not an exception, but a daily reality. In 2024, the country ranked as the third most polluted nation globally, following Bangladesh and Pakistan, with an average AQI of 111. For millions, breathing unhealthy air was not a seasonal anomaly, it was routine. Several Indian cities repeatedly appeared among the world’s most polluted urban centers, and New Delhi consistently ranked among the most polluted capital cities on the planet.
-             </p>
+            India is confronting a deepening air quality crisis. In 2024, the country ranked as the third most polluted nation globally, following Bangladesh and Pakistan, according to AQI.in. With an average AQI of 111, millions of people were exposed to unhealthy air for much of the year. Several Indian cities repeatedly appeared among the world's most polluted urban areas, underscoring the scale and persistence of the problem. New Delhi, the nation's capital, consistently recorded some of the highest pollution levels worldwide, placing it among the most polluted capital cities on the planet.  </p>
             <p style={{ marginTop: "10px" }}>
-              Another hard truth lies beneath these numbers. India’s rapid urbanization and heavy reliance on fossil fuels powering its expanding cities, industries, and transport systems have tied economic growth to environmental cost. The same coal plants, vehicles, and factories driving development also release the pollutants that fill the air with harmful particulate matter each day.  </p>
+             This crisis is closely tied to India's rapid urbanization and energy choices. As the third-largest emitter of greenhouse gases globally, the country relies heavily on fossil fuels to power its growing cities, industries, and transportation networks. While greenhouse gases drive long-term climate change, many of the same activities—coal-based power generation, vehicular traffic, and industrial production—also release pollutants that directly degrade the air people breathe every day.
+               </p>
             <p style={{ marginTop: "10px" }}>
-             And perhaps the deepest truth is this: in a nation home to one of the world's largest and densest populations, the pressures are immense. Rising energy demand, growing vehicle ownership, and expanding infrastructure have intensified emissions, while transitions to cleaner systems remain uneven and slow. Air pollution in India is not just an environmental statistic, it is a structural condition shaped by policy, geography, inequality, and the systems that determine what millions breathe every single day.     </p>
+             Home to one of the world's largest and densest populations, India faces unique pressures. Rising energy demand, expanding transportation systems, and accelerating urban growth have intensified emissions, while the increasing number of vehicles has made pollution control even more challenging. These pressures are compounded by slow transitions to clean energy, uneven infrastructure development, and weak enforcement of environmental regulations. This story examines how air pollution in India varies across space and time, and what these patterns reveal about public health, environmental inequality, and the systems that shape the air millions inhale daily.   </p>
           </div>
 
           {/* Delhi & Six Cities Scrollytelling Section */}
@@ -2457,7 +3107,7 @@ export default function App() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "flex-start",
-                marginLeft: "-40px",
+                marginLeft: "40px",
               }}
             >
               {/* Container for maps with relative positioning */}
@@ -2492,8 +3142,8 @@ export default function App() {
                   ref={delhiMapRef}
                   data="/india-states.svg"
                   type="image/svg+xml"
-                  width="550"
-                  height="650"
+                  width="700"
+                  height="700"
                   style={{ pointerEvents: "auto" }}
                   onLoad={() => {
                     if (delhiMapRef.current) {
@@ -2615,8 +3265,8 @@ export default function App() {
                   ref={sixCitiesMapRef}
                   data="/india-states.svg"
                   type="image/svg+xml"
-                  width="550"
-                  height="650"
+                  width="700"
+                  height="700"
                   style={{ pointerEvents: "none" }}
                   onLoad={() => {
                     if (sixCitiesMapRef.current) {
@@ -2636,8 +3286,8 @@ export default function App() {
 
                 {/* City markers overlay */}
                 <svg
-                  width="550"
-                  height="650"
+                  width="700"
+                  height="700"
                   viewBox="0 0 600 700"
                   style={{ position: "absolute", pointerEvents: "auto" }}
                 >
@@ -2790,7 +3440,7 @@ export default function App() {
                 flex: "4",
                 display: "flex",
                 flexDirection: "column",
-                paddingLeft: "40px",
+                paddingLeft: "0px",
               }}
             >
               {/* Delhi text section */}
@@ -2806,7 +3456,7 @@ export default function App() {
                   paddingBottom: "20vh",
                   opacity: activeMapIndex === 0 ? 1 : 0.3,
                   transition: "opacity 0.4s ease-out",
-                  paddingLeft: "60px",
+                  paddingLeft: "20px",
                 }}
               >
                 <div
@@ -2861,7 +3511,7 @@ export default function App() {
                   paddingBottom: "20vh",
                   opacity: activeMapIndex === 1 ? 1 : 0.3,
                   transition: "opacity 0.4s ease-out",
-                  paddingLeft: "60px",
+                  paddingLeft: "20px",
                 }}
               >
                 <div
@@ -4121,6 +4771,334 @@ export default function App() {
             </p>
           </div>
 
+          {/* India AQI Map - Standalone Section with Circular Overlays */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              position: "relative",
+              minHeight: "200vh",
+            }}
+          >
+            {/* Left: Sticky Map Visualization */}
+            <div
+              style={{
+                width: "55%",
+                position: "sticky",
+                top: 0,
+                height: "100vh",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "20px",
+              }}
+            >
+              <div
+                style={{
+                  position: "relative",
+                  width: "600px",
+                  height: "684px",
+                  overflow: "visible",
+                }}
+              >
+              {/* Base India Map */}
+              <object
+                ref={standAloneAqiMapRef}
+                data="/india-states.svg"
+                type="image/svg+xml"
+                width="600"
+                height="684"
+                style={{ pointerEvents: "none", position: "absolute", top: 0, left: 0 }}
+                onLoad={() => {
+                  if (standAloneAqiMapRef.current) {
+                    const svgDoc = standAloneAqiMapRef.current.contentDocument;
+                    if (svgDoc) {
+                      const paths = svgDoc.querySelectorAll("path");
+
+                      // State ID to name mapping
+                      const stateIdToName = {
+                        "ap": "Andhra Pradesh", "ar": "Arunachal Pradesh", "as": "Assam",
+                        "br": "Bihar", "ch": "Chandigarh", "ct": "Chhattisgarh",
+                        "dl": "Delhi", "ga": "Goa", "gj": "Gujarat",
+                        "hr": "Haryana", "hp": "Himachal Pradesh", "jh": "Jharkhand",
+                        "ka": "Karnataka", "kl": "Kerala", "mp": "Madhya Pradesh",
+                        "mh": "Maharashtra", "mn": "Manipur", "ml": "Meghalaya",
+                        "mz": "Mizoram", "nl": "Nagaland", "or": "Odisha",
+                        "pb": "Punjab", "rj": "Rajasthan", "sk": "Sikkim",
+                        "tn": "Tamil Nadu", "tg": "Telangana", "tr": "Tripura",
+                        "up": "Uttar Pradesh", "ut": "Uttarakhand", "wb": "West Bengal"
+                      };
+
+                      // AQI color function
+                      const getAQIColor = (avgAQI) => {
+                        if (!avgAQI) return "#e8e8e8";
+                        if (avgAQI <= 50) return "#5699af"; // Good
+                        if (avgAQI <= 100) return "#87beb1"; // Satisfactory
+                        if (avgAQI <= 200) return "#dfbfc6"; // Moderate
+                        if (avgAQI <= 300) return "#de9eaf"; // Poor
+                        if (avgAQI <= 400) return "#e07192"; // Very Poor
+                        return "#c1616b"; // Severe
+                      };
+
+                      // Create a map of state names to avgAQI
+                      const stateAQIMap = {};
+                      stateData.forEach((state) => {
+                        stateAQIMap[state.state] = state.avgAQI;
+                      });
+
+                      // SVG viewBox is 612x696, rendered at 600x684
+                      const scaleX = 600 / 612;
+                      const scaleY = 684 / 696;
+
+                      const centroids = {};
+                      paths.forEach((path) => {
+                        const id = path.id;
+                        const name = stateIdToName[id] || path.getAttribute("name");
+
+                        // Fill all states with grey
+                        path.style.fill = "#d0d0d0";
+                        path.style.opacity = "0.7";
+                        path.style.stroke = "#fff";
+                        path.style.strokeWidth = "0.5";
+
+                        // Compute centroids
+                        if (name && stateIdToName[id]) {
+                          const bbox = path.getBBox();
+                          centroids[name] = {
+                            x: (bbox.x + bbox.width / 2) * scaleX,
+                            y: (bbox.y + bbox.height / 2) * scaleY
+                          };
+                        }
+                      });
+                      setMapCentroids(centroids);
+                    }
+                  }
+                }}
+              />
+
+              {/* Circular Visualization Overlays - only render when centroids are computed */}
+              {stateData.length > 0 && mapCentroids && stateData.map((stateInfo) => {
+                const pos = mapCentroids[stateInfo.state];
+                if (!pos) return null;
+
+                // Visual size for each circle on the map
+                const visualSize = 90;
+
+                return (
+                  <div
+                    key={stateInfo.state}
+                    style={{
+                      position: "absolute",
+                      left: pos.x - visualSize / 2,
+                      top: pos.y - visualSize / 2,
+                      width: visualSize,
+                      height: visualSize,
+                      pointerEvents: "auto",
+                      cursor: "pointer",
+                    }}
+                    onMouseEnter={(e) => {
+                      setHoveredAQIMapState(stateInfo);
+                      setAqiMapTooltipPos({ x: e.clientX, y: e.clientY });
+                    }}
+                    onMouseMove={(e) => {
+                      setAqiMapTooltipPos({ x: e.clientX, y: e.clientY });
+                    }}
+                    onMouseLeave={() => {
+                      setHoveredAQIMapState(null);
+                    }}
+                  >
+                    <div style={{
+                      transform: `scale(${visualSize / 800})`,
+                      transformOrigin: "top left",
+                      width: 800,
+                      height: 800,
+                      pointerEvents: "none",
+                    }}>
+                      {renderCircularVisualization(stateInfo, true)}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* AQI Map Tooltip */}
+              {hoveredAQIMapState && (
+                <div
+                  style={{
+                    position: "fixed",
+                    left: aqiMapTooltipPos.x + 15,
+                    top: aqiMapTooltipPos.y - 10,
+                    backgroundColor: "rgba(255, 255, 255, 0.97)",
+                    padding: "12px 16px",
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+                    border: "1px solid #e0e0e0",
+                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                    pointerEvents: "none",
+                    zIndex: 1001,
+                    minWidth: "140px",
+                  }}
+                >
+                  <div style={{
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    color: "#333",
+                    marginBottom: "6px",
+                  }}>
+                    {hoveredAQIMapState.state}
+                  </div>
+                  <div style={{
+                    fontSize: "12px",
+                    color: "#666",
+                  }}>
+                    <span style={{ color: "#999" }}>Average AQI:</span>{" "}
+                    <strong style={{ color: "#333" }}>{hoveredAQIMapState.avgAQI?.toFixed(0) || "N/A"}</strong>
+                  </div>
+                </div>
+              )}
+              </div>
+            </div>
+
+            {/* Right: Scrollable Cards Container */}
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              {/* First Card - Mapping Air Quality Index */}
+              <div
+                style={{
+                  minHeight: "100vh",
+                  padding: "60px 40px",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                <div
+                  style={{
+                    maxWidth: "450px",
+                    padding: "30px",
+                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                    borderLeft: "4px solid #5699af",
+                  }}
+                >
+                  <h2
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "20px",
+                      fontWeight: "500",
+                      color: "#333",
+                      margin: 0,
+                      marginBottom: "15px",
+                      lineHeight: "1.3",
+                    }}
+                  >
+                    Mapping Air Quality Index (AQI) across India
+                  </h2>
+                  <p
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "15px",
+                      color: "#555",
+                      lineHeight: "1.8",
+                      marginTop: "15px",
+                      marginBottom: "15px",
+                    }}
+                  >
+                    The map of India on the left illustrates Air Quality Index (AQI) conditions across 2024. Each circular calendar represents a state or union territory, with radial lines showing daily AQI values throughout the year. Colors indicate pollution severity—blue tones for better air quality and pink tones for poorer conditions.
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "12px",
+                      color: "#888",
+                      fontStyle: "italic",
+                      marginBottom: 0,
+                    }}
+                  >
+                    Source: Kaggle - India Air Quality Index 2024 Dataset
+                  </p>
+                </div>
+              </div>
+
+              {/* Second Card - AQI Categories & Health Impact */}
+              <div
+                style={{
+                  minHeight: "80vh",
+                  padding: "60px 40px",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                <div
+                  style={{
+                    maxWidth: "450px",
+                    padding: "30px",
+                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                    borderLeft: "4px solid #5699af",
+                  }}
+                >
+                  <h4
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "20px",
+                      fontWeight: "500",
+                      color: "#333",
+                      margin: 0,
+                      marginBottom: "20px",
+                    }}
+                  >
+                    AQI Categories & Health Impact
+                  </h4>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                      <div style={{ width: "16px", height: "16px", backgroundColor: "#5699af", borderRadius: "3px", flexShrink: 0, marginTop: "3px" }} />
+                      <p style={{ fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif", fontSize: "14px", color: "#555", lineHeight: "1.6", margin: 0 }}>
+                        <strong style={{ color: "#333" }}>Good (0–50):</strong> Minimal health impact.
+                      </p>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                      <div style={{ width: "16px", height: "16px", backgroundColor: "#87beb1", borderRadius: "3px", flexShrink: 0, marginTop: "3px" }} />
+                      <p style={{ fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif", fontSize: "14px", color: "#555", lineHeight: "1.6", margin: 0 }}>
+                        <strong style={{ color: "#333" }}>Satisfactory (51–100):</strong> May cause minor breathing discomfort for sensitive individuals.
+                      </p>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                      <div style={{ width: "16px", height: "16px", backgroundColor: "#dfbfc6", borderRadius: "3px", flexShrink: 0, marginTop: "3px" }} />
+                      <p style={{ fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif", fontSize: "14px", color: "#555", lineHeight: "1.6", margin: 0 }}>
+                        <strong style={{ color: "#333" }}>Moderate (101–200):</strong> Can lead to breathing discomfort for people with asthma or lung disease.
+                      </p>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                      <div style={{ width: "16px", height: "16px", backgroundColor: "#de9eaf", borderRadius: "3px", flexShrink: 0, marginTop: "3px" }} />
+                      <p style={{ fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif", fontSize: "14px", color: "#555", lineHeight: "1.6", margin: 0 }}>
+                        <strong style={{ color: "#333" }}>Poor (201–300):</strong> May cause breathing discomfort with prolonged exposure.
+                      </p>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                      <div style={{ width: "16px", height: "16px", backgroundColor: "#e07192", borderRadius: "3px", flexShrink: 0, marginTop: "3px" }} />
+                      <p style={{ fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif", fontSize: "14px", color: "#555", lineHeight: "1.6", margin: 0 }}>
+                        <strong style={{ color: "#333" }}>Very Poor (301–400):</strong> Prolonged exposure may result in respiratory illness.
+                      </p>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                      <div style={{ width: "16px", height: "16px", backgroundColor: "#c1616b", borderRadius: "3px", flexShrink: 0, marginTop: "3px" }} />
+                      <p style={{ fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif", fontSize: "14px", color: "#555", lineHeight: "1.6", margin: 0 }}>
+                        <strong style={{ color: "#333" }}>Severe (401–500):</strong> Can cause respiratory effects even in healthy individuals.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+
           {/* Transition text before state circular visualizations */}
           <div
             style={{
@@ -4340,10 +5318,10 @@ export default function App() {
                       if (svgDoc) {
                         const paths = svgDoc.querySelectorAll("path");
                         paths.forEach((path) => {
-                          path.style.fill = "#e0e0e0";
-                          path.style.stroke = "#999";
+                          path.style.fill = "#d0d0d0";
+                          path.style.stroke = "#fff";
                           path.style.strokeWidth = "0.3";
-                          path.style.opacity = "0.6";
+                          path.style.opacity = "0.7";
                           path.style.transition = "fill 0.2s, opacity 0.2s";
                         });
                       }
@@ -4617,275 +5595,6 @@ export default function App() {
 
           </div>
 
-          {/* Transition Text - Regional AQI Divide */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "flex-start",
-              padding: "60px 20px",
-              marginTop: "80px",
-              background: "#fff",
-            }}
-          >
-            <div
-              style={{
-                width: "6px",
-                height: "80px",
-                backgroundColor: "#5699af",
-                marginRight: "20px",
-                flexShrink: 0,
-              }}
-            />
-            <p
-              style={{
-                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                fontSize: "22px",
-                fontWeight: "300",
-                color: "#333",
-                textAlign: "left",
-                maxWidth: "800px",
-                lineHeight: "2.0",
-                margin: 0,
-                marginTop: "-10px",
-              }}
-            >
-              Across India's landscape, the northern plains consistently grapple with far more severe AQI levels than the southern peninsula, revealing a regional divide in how pollution settles and persists.
-            </p>
-          </div>
-
-          {/* AQI vs Population & Weather Scrollytelling Section */}
-          <div
-            ref={populationTextRef}
-            style={{
-              display: "flex",
-              minHeight: "100vh",
-              padding: "0 40px",
-              maxWidth: "1400px",
-              margin: "0 auto",
-              marginTop: "150px",
-            }}
-          >
-            {/* Left column - Sticky maps that transition */}
-            <div
-              style={{
-                flex: "1",
-                position: "sticky",
-                top: "10vh",
-                height: "80vh",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              {/* AQI vs Population map */}
-              <div
-                style={{
-                  position: "absolute",
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  display: activePopRainfallIndex === 0 ? "block" : "none",
-                  opacity: mapMorphProgress >= 0.5 ? 1 : 0,
-                  transition: "opacity 0.3s ease",
-                }}
-              >
-                <div style={{ position: "relative", width: "700px", height: "750px", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <object
-                    ref={populationMapRef}
-                    data="/india-states.svg"
-                    type="image/svg+xml"
-                    width="700"
-                    height="750"
-                    style={{ pointerEvents: "auto" }}
-                    onLoad={() => {
-                      if (populationMapRef.current && stateData.length > 0) {
-                        const svgDoc = populationMapRef.current.contentDocument;
-                        if (svgDoc) {
-                          const paths = svgDoc.querySelectorAll("path");
-                          paths.forEach((path) => {
-                            const stateName = path.getAttribute("name");
-
-                            // Fill states with AQI category colors
-                            const stateAQIData = stateData.find(d => d.state === stateName);
-                            if (stateAQIData && stateAQIData.avgAQI) {
-                              const aqi = stateAQIData.avgAQI;
-                              let color;
-                              let category;
-                              let description;
-                              if (aqi <= 50) {
-                                color = "#5699af";
-                                category = "Good";
-                                description = "Minimal impact on health";
-                              } else if (aqi <= 100) {
-                                color = "#87beb1";
-                                category = "Satisfactory";
-                                description = "Minor breathing discomfort for sensitive people";
-                              } else if (aqi <= 200) {
-                                color = "#dfbfc6";
-                                category = "Moderate";
-                                description = "Breathing discomfort for people with lung/heart disease";
-                              } else if (aqi <= 300) {
-                                color = "#de9eaf";
-                                category = "Poor";
-                                description = "Breathing discomfort for most people on prolonged exposure";
-                              } else if (aqi <= 400) {
-                                color = "#e07192";
-                                category = "Very Poor";
-                                description = "Respiratory illness on prolonged exposure";
-                              } else {
-                                color = "#c1616b";
-                                category = "Severe";
-                                description = "Affects healthy people and seriously impacts those with existing diseases";
-                              }
-
-                              path.style.fill = color;
-                              path.style.fillOpacity = "0.7";
-                              path.style.stroke = "#fff";
-                              path.style.strokeWidth = "0.5";
-                              path.style.cursor = "pointer";
-                              path.style.transition = "fill-opacity 0.2s ease";
-
-                              // Store data on the path for tooltip
-                              path.dataset.aqi = Math.round(aqi);
-                              path.dataset.category = category;
-                              path.dataset.description = description;
-                              path.dataset.color = color;
-
-                              path.addEventListener("mouseenter", (e) => {
-                                path.style.fillOpacity = "1";
-                                setHoveredAQIMapState({
-                                  name: stateName,
-                                  aqi: path.dataset.aqi,
-                                  category: path.dataset.category,
-                                  description: path.dataset.description,
-                                  color: path.dataset.color,
-                                });
-                                setAqiMapTooltipPos({ x: e.clientX, y: e.clientY });
-                              });
-
-                              path.addEventListener("mousemove", (e) => {
-                                setAqiMapTooltipPos({ x: e.clientX, y: e.clientY });
-                              });
-
-                              path.addEventListener("mouseleave", () => {
-                                path.style.fillOpacity = "0.7";
-                                setHoveredAQIMapState(null);
-                              });
-                            } else {
-                              path.style.fill = "#f0f0f0";
-                              path.style.stroke = "#ccc";
-                              path.style.strokeWidth = "0.3";
-                            }
-                          });
-                        }
-                      }
-                    }}
-                  />
-                </div>
-                {/* AQI Legend */}
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    gap: "4px",
-                    marginTop: "20px",
-                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                    fontSize: "11px",
-                  }}
-                >
-                  {[
-                    { color: "#5699af", label: "Good", range: "0-50" },
-                    { color: "#87beb1", label: "Satisfactory", range: "51-100" },
-                    { color: "#dfbfc6", label: "Moderate", range: "101-200" },
-                    { color: "#de9eaf", label: "Poor", range: "201-300" },
-                    { color: "#e07192", label: "Very Poor", range: "301-400" },
-                    { color: "#c1616b", label: "Severe", range: "400+" },
-                    { color: "#ccc", label: "No Data", range: "" },
-                  ].map((item, i) => (
-                    <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                      <div
-                        style={{
-                          width: "80px",
-                          height: "12px",
-                          backgroundColor: item.color,
-                          opacity: 0.8,
-                        }}
-                      />
-                      <span style={{ color: "#555", marginTop: "6px", fontWeight: "500" }}>{item.label}</span>
-                      <span style={{ color: "#888", fontSize: "10px" }}>{item.range}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* AQI Map Tooltip */}
-              {hoveredAQIMapState && (
-                <div
-                  style={{
-                    position: "fixed",
-                    left: aqiMapTooltipPos.x + 15,
-                    top: aqiMapTooltipPos.y - 10,
-                    backgroundColor: "rgba(255, 255, 255, 0.97)",
-                    padding: "12px 16px",
-                    borderRadius: "8px",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-                    pointerEvents: "none",
-                    zIndex: 1000,
-                    minWidth: "200px",
-                    maxWidth: "280px",
-                    border: "1px solid #e0e0e0",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      color: "#333",
-                      marginBottom: "8px",
-                      borderBottom: "1px solid #eee",
-                      paddingBottom: "6px",
-                    }}
-                  >
-                    {hoveredAQIMapState.name}
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "12px",
-                      color: "#666",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    <span style={{ color: "#999" }}>Annual Avg AQI:</span>{" "}
-                    <strong style={{ color: "#333" }}>{hoveredAQIMapState.aqi}</strong>
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "12px",
-                      color: hoveredAQIMapState.color,
-                      fontWeight: "500",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    {hoveredAQIMapState.category}
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "11px",
-                      color: "#888",
-                      lineHeight: "1.4",
-                    }}
-                  >
-                    {hoveredAQIMapState.description}
-                  </div>
-                </div>
-              )}
-
-            </div>
-          </div>
 
           {/* Transition Text */}
           <div
@@ -4920,7 +5629,8 @@ export default function App() {
                 marginTop: "-10px",
               }}
             >
-              This stark contrast invites a deeper exploration into how geography, climate, and human activity shape the air quality.
+              
+Now, let's look beyond AQI levels and explore the major causes driving air pollution across India.
             </p>
           </div>
 
@@ -4932,26 +5642,27 @@ export default function App() {
               backgroundColor: "#fff",
             }}
           >
-            {/* Left - Sticky Scatter Plot with Morphing Transition */}
+            {/* Left - Sticky India Map with Population/Rainfall dots */}
             <div
               style={{
-                flex: "0 0 55%",
+                width: "55%",
                 position: "sticky",
                 top: 0,
                 height: "100vh",
                 display: "flex",
                 flexDirection: "column",
-                alignItems: "flex-start",
+                alignItems: "center",
                 justifyContent: "center",
-                padding: "40px 20px 20px 60px",
+                padding: "20px",
               }}
             >
-              {/* Tabs for Population, Climate, Geography */}
-              <div style={{ display: "flex", gap: "4px", marginBottom: "16px" }}>
+              {/* Tabs for Population, Climate, Wind, Geography */}
+              <div style={{ display: "flex", gap: "4px", marginBottom: "20px" }}>
                 {[
                   { name: "Population", index: 0, color: "#5699af" },
                   { name: "Climate", index: 1, color: "#5699af" },
-                  { name: "Geography", index: 2, color: "#5699af" },
+                  { name: "Wind", index: 2, color: "#5699af" },
+                  { name: "Geography", index: 3, color: "#5699af" },
                 ].map((tab) => (
                   <button
                     key={tab.index}
@@ -4974,199 +5685,21 @@ export default function App() {
                 ))}
               </div>
 
-              {/* Title and Subtitle - hidden for Geography */}
-              <div style={{ marginBottom: "20px", opacity: activeScatterIndex === 2 ? 0 : 1, transition: "opacity 0.4s ease" }}>
-                <h3
-                  style={{
-                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                    fontSize: "20px",
-                    fontWeight: "500",
-                    color: "#333",
-                    margin: "0 0 8px 0",
-                    transition: "opacity 0.3s ease",
-                  }}
-                >
-                  {activeScatterIndex === 0
-                    ? "Correlation Mapping of Average Annual AQI vs Population - 2024"
-                    : "Correlation Mapping of Average Annual AQI vs Rainfall - 2024"}
-                </h3>
-                <p
-                  style={{
-                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                    fontSize: "14px",
-                    fontWeight: "400",
-                    color: "#888",
-                    margin: "0",
-                  }}
-                >
-                  Each dot represents a state or UT, hover for more info
-                </p>
-              </div>
-
-              {/* Scatter Plot - hidden when Geography is active */}
-              <div style={{
-                opacity: activeScatterIndex === 2 ? 0 : 1,
-                transform: activeScatterIndex === 2 ? "scale(0.95)" : "scale(1)",
-                transition: "opacity 0.5s ease, transform 0.5s ease",
-                position: activeScatterIndex === 2 ? "absolute" : "relative",
-                pointerEvents: activeScatterIndex === 2 ? "none" : "auto",
-              }}>
-              <svg width="600" height="480" viewBox="0 0 500 400" style={{ overflow: "visible" }}>
-                {/* Axes */}
-                <line x1="60" y1="350" x2="480" y2="350" stroke="#ccc" strokeWidth="1" />
-                <line x1="60" y1="350" x2="60" y2="30" stroke="#ccc" strokeWidth="1" />
-
-                {/* X-axis label - morphs between Population and Rainfall */}
-                <text
-                  x="270"
-                  y="390"
-                  textAnchor="middle"
-                  fontSize="14"
-                  fontFamily="Avenir, sans-serif"
-                  fill="#555"
-                  style={{ transition: "opacity 0.5s ease" }}
-                >
-                  {activeScatterIndex === 0 ? "Population (millions)" : "Annual Rainfall (mm)"}
-                </text>
-
-                {/* Y-axis label */}
-                <text x="20" y="190" textAnchor="middle" fontSize="14" fontFamily="Avenir, sans-serif" fill="#555" transform="rotate(-90, 20, 190)">
-                  Average AQI
-                </text>
-
-                {/* X-axis ticks for Population */}
-                <g style={{ opacity: activeScatterIndex === 0 ? 1 : 0, transition: "opacity 0.5s ease" }}>
-                  {[0, 50, 100, 150, 200, 250].map((val, i) => (
-                    <g key={`x-pop-${i}`}>
-                      <line x1={60 + (val / 250) * 420} y1="350" x2={60 + (val / 250) * 420} y2="355" stroke="#999" />
-                      <text x={60 + (val / 250) * 420} y="370" textAnchor="middle" fontSize="11" fill="#666">{val}</text>
-                    </g>
-                  ))}
-                </g>
-
-                {/* X-axis ticks for Rainfall */}
-                <g style={{ opacity: activeScatterIndex === 1 ? 1 : 0, transition: "opacity 0.5s ease" }}>
-                  {[0, 1000, 2000, 3000, 4000].map((val, i) => (
-                    <g key={`x-rain-${i}`}>
-                      <line x1={60 + (val / 4500) * 420} y1="350" x2={60 + (val / 4500) * 420} y2="355" stroke="#999" />
-                      <text x={60 + (val / 4500) * 420} y="370" textAnchor="middle" fontSize="11" fill="#666">{val}</text>
-                    </g>
-                  ))}
-                </g>
-
-                {/* Y-axis ticks */}
-                {[0, 50, 100, 150, 200, 250, 300].map((val, i) => (
-                  <g key={`y-${i}`}>
-                    <line x1="55" y1={350 - (val / 300) * 320} x2="60" y2={350 - (val / 300) * 320} stroke="#999" />
-                    <text x="50" y={354 - (val / 300) * 320} textAnchor="end" fontSize="11" fill="#666">{val}</text>
-                  </g>
-                ))}
-
-                {/* Reference line at AQI 100 */}
-                <line x1="60" y1={350 - (100 / 300) * 320} x2="480" y2={350 - (100 / 300) * 320} stroke="#87beb1" strokeWidth="1" strokeDasharray="4,4" />
-                <text x="485" y={354 - (100 / 300) * 320} fontSize="10" fill="#87beb1">Satisfactory</text>
-
-                {/* Data points that morph between positions */}
-                {stateData.map((state, i) => {
-                  const popData = populationData.find(p =>
-                    p.state === state.state ||
-                    p.state.replace("&", "and") === state.state ||
-                    p.state.replace(" & ", " and ") === state.state
-                  );
-                  if (!popData || !state.avgAQI) return null;
-
-                  const pop = popData.population / 1000000;
-                  const rainfall = popData.rainfall || 0;
-                  const region = popData.region || "Unknown";
-                  const aqi = state.avgAQI;
-
-                  // Calculate positions for both plots
-                  const xPop = 60 + (pop / 250) * 420;
-                  const xRain = 60 + (rainfall / 4500) * 420;
-                  const y = 350 - (aqi / 300) * 320;
-
-                  // Interpolate x position based on activeScatterIndex
-                  const x = activeScatterIndex === 0 ? xPop : xRain;
-
-                  // Color based on AQI
-                  let color;
-                  if (aqi <= 50) color = "#5699af";
-                  else if (aqi <= 100) color = "#87beb1";
-                  else if (aqi <= 200) color = "#dfbfc6";
-                  else if (aqi <= 300) color = "#de9eaf";
-                  else color = "#e07192";
-
-                  // Skip points without rainfall data when in rainfall mode
-                  if (activeScatterIndex === 1 && !popData.rainfall) {
-                    return (
-                      <circle
-                        key={`morph-${i}`}
-                        cx={x}
-                        cy={y}
-                        r="6"
-                        fill={color}
-                        fillOpacity="0"
-                        stroke="#fff"
-                        strokeWidth="1"
-                        style={{
-                          transition: "cx 0.8s cubic-bezier(0.4, 0, 0.2, 1), cy 0.8s cubic-bezier(0.4, 0, 0.2, 1), fill-opacity 0.5s ease",
-                        }}
-                      />
-                    );
-                  }
-
-                  return (
-                    <circle
-                      key={`morph-${i}`}
-                      cx={x}
-                      cy={y}
-                      r={hoveredScatterPoint?.state === state.state ? "8" : "6"}
-                      fill={color}
-                      fillOpacity={hoveredScatterPoint?.state === state.state ? "1" : "0.7"}
-                      stroke={hoveredScatterPoint?.state === state.state ? "#333" : "#fff"}
-                      strokeWidth={hoveredScatterPoint?.state === state.state ? "2" : "1"}
-                      style={{
-                        transition: "cx 0.8s cubic-bezier(0.4, 0, 0.2, 1), cy 0.8s cubic-bezier(0.4, 0, 0.2, 1), r 0.15s ease, stroke 0.15s ease",
-                        cursor: "pointer",
-                      }}
-                      onMouseEnter={(e) => {
-                        const rect = e.target.ownerSVGElement.getBoundingClientRect();
-                        // Scale factor: rendered size / viewBox size (600/500 = 1.2, 480/400 = 1.2)
-                        const scaleX = rect.width / 500;
-                        const scaleY = rect.height / 400;
-                        setHoveredScatterPoint({
-                          state: state.state,
-                          aqi: Math.round(aqi),
-                          population: Math.round(pop),
-                          rainfall: Math.round(rainfall),
-                          region: region,
-                        });
-                        setScatterTooltipPos({
-                          x: rect.left + x * scaleX + 15,
-                          y: rect.top + y * scaleY - 10,
-                        });
-                      }}
-                      onMouseLeave={() => setHoveredScatterPoint(null)}
-                    />
-                  );
-                })}
-              </svg>
-              </div>
-
-              {/* Scatter Plot Tooltip - outside transform wrapper for proper fixed positioning */}
-              {hoveredScatterPoint && (
+              {/* Tooltip overlay on map - appears when hovering scatter or map dots */}
+              {hoveredScatterPoint && activeScatterIndex < 2 && (
                 <div
                   style={{
-                    position: "fixed",
-                    left: scatterTooltipPos.x,
-                    top: scatterTooltipPos.y,
+                    position: "absolute",
+                    // Use direct pixel coordinates from SVG overlay
+                    left: Math.min(hoveredScatterPoint.x + 15, 500),
+                    top: hoveredScatterPoint.y - 50,
                     backgroundColor: "rgba(255, 255, 255, 0.97)",
                     padding: "12px 16px",
                     borderRadius: "8px",
                     boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
                     pointerEvents: "none",
                     zIndex: 1000,
-                    minWidth: "180px",
+                    minWidth: "160px",
                     border: "1px solid #e0e0e0",
                   }}
                 >
@@ -5191,68 +5724,297 @@ export default function App() {
                       marginBottom: "4px",
                     }}
                   >
-                    <span style={{ color: "#999" }}>Region:</span> {hoveredScatterPoint.region}
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "12px",
-                      color: "#666",
-                      marginBottom: "4px",
-                    }}
-                  >
                     <span style={{ color: "#999" }}>Average AQI:</span> {hoveredScatterPoint.aqi}
                   </div>
-                  <div
-                    style={{
-                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "12px",
-                      color: "#666",
-                    }}
-                  >
-                    <span style={{ color: "#999" }}>
-                      {activeScatterIndex === 0 ? "Population:" : "Rainfall:"}
-                    </span>{" "}
-                    {activeScatterIndex === 0
-                      ? `${hoveredScatterPoint.population}M`
-                      : `${hoveredScatterPoint.rainfall}mm`}
-                  </div>
+                  {activeScatterIndex === 0 && (
+                    <div
+                      style={{
+                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                        fontSize: "12px",
+                        color: "#666",
+                      }}
+                    >
+                      <span style={{ color: "#999" }}>Population:</span> {hoveredScatterPoint.population}M
+                    </div>
+                  )}
+                  {activeScatterIndex === 1 && (
+                    <div
+                      style={{
+                        fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                        fontSize: "12px",
+                        color: "#666",
+                      }}
+                    >
+                      <span style={{ color: "#999" }}>Rainfall:</span> {hoveredScatterPoint.rainfall}mm
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Himalayas Image - shown when Geography is active */}
+              {/* Mapbox Map - shown for all tabs (Population, Climate, Wind, Geography) */}
               <div style={{
-                position: activeScatterIndex === 2 ? "relative" : "absolute",
-                opacity: activeScatterIndex === 2 ? 1 : 0,
-                transform: activeScatterIndex === 2 ? "scale(1)" : "scale(0.95)",
-                transition: "opacity 0.5s ease, transform 0.5s ease",
-                pointerEvents: activeScatterIndex === 2 ? "auto" : "none",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                position: "relative",
+                width: 650,
+                height: 626,
+                borderRadius: "8px",
+                overflow: "hidden",
+                boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
               }}>
-                <img
-                  src="/Himalayas.png"
-                  alt="Himalayas blocking air flow"
+                <div
+                  ref={windMapboxContainerRef}
                   style={{
-                    maxWidth: "100%",
-                    height: "auto",
-                    maxHeight: "500px",
+                    width: "100%",
+                    height: "100%",
                   }}
                 />
+                {/* AQI spike circles overlay for Population/Climate tabs */}
+                {activeScatterIndex < 2 && (
+                  <svg
+                    width="650"
+                    height="626"
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      pointerEvents: "auto",
+                    }}
+                  >
+                    {stateData.map((state) => {
+                      // Geographic coordinates (lon, lat) for each state centroid
+                      const stateGeoCoords = {
+                        "Andhra Pradesh": { lon: 79.74, lat: 15.91 },
+                        "Arunachal Pradesh": { lon: 94.73, lat: 28.22 },
+                        "Assam": { lon: 92.94, lat: 26.20 },
+                        "Bihar": { lon: 85.31, lat: 25.10 },
+                        "Chhattisgarh": { lon: 81.87, lat: 21.28 },
+                        "Delhi": { lon: 77.10, lat: 28.70 },
+                        "Goa": { lon: 74.12, lat: 15.30 },
+                        "Gujarat": { lon: 71.19, lat: 22.26 },
+                        "Haryana": { lon: 76.08, lat: 29.06 },
+                        "Himachal Pradesh": { lon: 77.17, lat: 31.10 },
+                        "Jharkhand": { lon: 85.28, lat: 23.61 },
+                        "Karnataka": { lon: 75.71, lat: 15.32 },
+                        "Kerala": { lon: 76.27, lat: 10.85 },
+                        "Madhya Pradesh": { lon: 78.66, lat: 22.97 },
+                        "Maharashtra": { lon: 75.71, lat: 19.75 },
+                        "Manipur": { lon: 93.91, lat: 24.66 },
+                        "Meghalaya": { lon: 91.37, lat: 25.47 },
+                        "Mizoram": { lon: 92.94, lat: 23.16 },
+                        "Nagaland": { lon: 94.56, lat: 26.16 },
+                        "Odisha": { lon: 85.09, lat: 20.94 },
+                        "Punjab": { lon: 75.34, lat: 31.15 },
+                        "Rajasthan": { lon: 74.22, lat: 27.02 },
+                        "Sikkim": { lon: 88.51, lat: 27.53 },
+                        "Tamil Nadu": { lon: 78.66, lat: 11.13 },
+                        "Telangana": { lon: 79.02, lat: 18.11 },
+                        "Tripura": { lon: 91.99, lat: 23.94 },
+                        "Uttar Pradesh": { lon: 80.95, lat: 26.85 },
+                        "Uttarakhand": { lon: 79.07, lat: 30.07 },
+                        "West Bengal": { lon: 87.86, lat: 22.99 },
+                        "Chandigarh": { lon: 76.78, lat: 30.73 },
+                      };
+
+                      const geo = stateGeoCoords[state.state];
+                      if (!geo) return null;
+
+                      // Convert geographic coordinates to pixel positions
+                      // Mapbox bounds: [68, 6] to [98, 37] with padding 20
+                      const padding = 20;
+                      const minLon = 68, maxLon = 98;
+                      const minLat = 6, maxLat = 37;
+                      const containerWidth = 650, containerHeight = 626;
+
+                      const coord = {
+                        x: padding + ((geo.lon - minLon) / (maxLon - minLon)) * (containerWidth - 2 * padding),
+                        y: padding + ((maxLat - geo.lat) / (maxLat - minLat)) * (containerHeight - 2 * padding),
+                      };
+                      if (!coord) return null;
+
+                      const popData = populationData.find(p =>
+                        p.state === state.state ||
+                        p.state.replace("&", "and") === state.state ||
+                        p.state.replace(" & ", " and ") === state.state
+                      );
+
+                      const population = popData ? popData.population / 1000000 : 10;
+                      const rainfall = popData?.rainfall || 1000;
+
+                      const isHovered = hoveredScatterPoint?.state === state.state;
+
+                      const aqiValues = [];
+                      const dateMap = new Map();
+                      const selectedArea = selectedAreas[state.state];
+
+                      state.areaData.forEach((areaMonths, area) => {
+                        if (selectedArea && area !== selectedArea) return;
+                        areaMonths.forEach((days, monthKey) => {
+                          days.forEach((dayData, dayNum) => {
+                            const dateKey = `${monthKey}-${dayNum}`;
+                            const existing = dateMap.get(dateKey);
+                            if (!existing || dayData.aqiValue > existing.aqiValue) {
+                              dateMap.set(dateKey, { aqiValue: dayData.aqiValue });
+                            }
+                            if (dayData.aqiValue) aqiValues.push(dayData.aqiValue);
+                          });
+                        });
+                      });
+
+                      const avgAQI = aqiValues.length > 0
+                        ? aqiValues.reduce((sum, val) => sum + val, 0) / aqiValues.length
+                        : 0;
+
+                      const getAqiColor = (avg) => {
+                        if (avg <= 50) return "#5699af";
+                        if (avg <= 100) return "#87beb1";
+                        if (avg <= 200) return "#dfbfc6";
+                        if (avg <= 300) return "#de9eaf";
+                        if (avg <= 400) return "#e07192";
+                        return "#c1616b";
+                      };
+                      const aqiColor = getAqiColor(avgAQI);
+
+                      // Semi-circle radius based on AQI
+                      const minRadius = 8;
+                      const maxRadius = 28;
+                      const maxAQI = 400;
+                      const normalizedAQI = Math.min(avgAQI / maxAQI, 1);
+                      const aqiRadius = minRadius + normalizedAQI * (maxRadius - minRadius);
+
+                      // Semi-circle radius based on Population or Rainfall
+                      const maxPop = 250;
+                      const maxRain = 3000;
+                      const normalizedValue = activeScatterIndex === 1
+                        ? Math.min(rainfall / maxRain, 1)
+                        : Math.min(population / maxPop, 1);
+                      const popRainRadius = minRadius + normalizedValue * (maxRadius - minRadius);
+
+                      // Blue color intensity for population/rainfall
+                      const intensity = normalizedValue;
+                      const r = Math.round(179 - intensity * 153);
+                      const g = Math.round(217 - intensity * 127);
+                      const b = Math.round(230 - intensity * 108);
+                      const popRainColor = `rgb(${r}, ${g}, ${b})`;
+
+                      // Hover adjustment
+                      const hoverAdd = isHovered ? 2 : 0;
+                      const aqiR = aqiRadius + hoverAdd;
+                      const popR = popRainRadius + hoverAdd;
+
+                      // Left semi-circle path (AQI) - arc from top to bottom, curving left
+                      const leftPath = `M ${coord.x} ${coord.y - aqiR} A ${aqiR} ${aqiR} 0 0 0 ${coord.x} ${coord.y + aqiR} Z`;
+
+                      // Right semi-circle path (Population/Rainfall) - arc from top to bottom, curving right
+                      const rightPath = `M ${coord.x} ${coord.y - popR} A ${popR} ${popR} 0 0 1 ${coord.x} ${coord.y + popR} Z`;
+
+                      return (
+                        <g
+                          key={state.state}
+                          style={{ cursor: "pointer" }}
+                          onMouseEnter={() => {
+                            setHoveredScatterPoint({
+                              state: state.state,
+                              aqi: Math.round(state.avgAQI),
+                              population: Math.round(population),
+                              rainfall: Math.round(rainfall),
+                              region: popData?.region || "Unknown",
+                              x: coord.x,
+                              y: coord.y,
+                            });
+                          }}
+                          onMouseLeave={() => setHoveredScatterPoint(null)}
+                        >
+                          {/* Left semi-circle - AQI */}
+                          <path
+                            d={leftPath}
+                            fill={aqiColor}
+                            fillOpacity={1}
+                            stroke={aqiColor}
+                            strokeWidth={isHovered ? 1.5 : 1}
+                            strokeOpacity={1}
+                          />
+                          {/* Right semi-circle - Population/Rainfall */}
+                          <path
+                            d={rightPath}
+                            fill={popRainColor}
+                            fillOpacity={1}
+                            stroke={popRainColor}
+                            strokeWidth={isHovered ? 1.5 : 1}
+                            strokeOpacity={1}
+                          />
+                        </g>
+                      );
+                    })}
+                  </svg>
+                )}
+                {/* Legend for Population/Climate maps */}
+                {activeScatterIndex < 2 && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: 15,
+                      right: 15,
+                      backgroundColor: "rgba(255, 255, 255, 0.95)",
+                      padding: "12px 15px",
+                      borderRadius: "6px",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                      fontSize: "11px",
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      maxWidth: "220px",
+                    }}
+                  >
+                    {/* Left Semi-circle - AQI Legend */}
+                    <div style={{ marginBottom: "10px" }}>
+                      <div style={{ fontWeight: "600", color: "#333", marginBottom: "6px" }}>
+                        Left Half: Average AQI
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <svg width="90" height="32" style={{ overflow: "visible" }}>
+                          {/* Small left semi-circle */}
+                          <path d="M 8 10 A 6 6 0 0 0 8 22 Z" fill="#5699af" fillOpacity="1" stroke="#5699af" strokeWidth="1" />
+                          {/* Medium left semi-circle */}
+                          <path d="M 32 6 A 10 10 0 0 0 32 26 Z" fill="#87beb1" fillOpacity="1" stroke="#87beb1" strokeWidth="1" />
+                          {/* Large left semi-circle */}
+                          <path d="M 64 2 A 14 14 0 0 0 64 30 Z" fill="#de9eaf" fillOpacity="1" stroke="#de9eaf" strokeWidth="1" />
+                        </svg>
+                        <span style={{ color: "#666", fontSize: "10px" }}>Low → High</span>
+                      </div>
+                    </div>
+
+                    {/* Right Semi-circle - Population or Rainfall Legend */}
+                    <div>
+                      <div style={{ fontWeight: "600", color: "#333", marginBottom: "6px" }}>
+                        Right Half: {activeScatterIndex === 0 ? "Population" : "Rainfall"}
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <svg width="90" height="32" style={{ overflow: "visible" }}>
+                          {/* Small right semi-circle */}
+                          <path d="M 8 10 A 6 6 0 0 1 8 22 Z" fill="rgb(179, 217, 230)" fillOpacity="1" stroke="rgb(179, 217, 230)" strokeWidth="1" />
+                          {/* Medium right semi-circle */}
+                          <path d="M 32 6 A 10 10 0 0 1 32 26 Z" fill="rgb(102, 153, 176)" fillOpacity="1" stroke="rgb(102, 153, 176)" strokeWidth="1" />
+                          {/* Large right semi-circle */}
+                          <path d="M 64 2 A 14 14 0 0 1 64 30 Z" fill="rgb(26, 90, 122)" fillOpacity="1" stroke="rgb(26, 90, 122)" strokeWidth="1" />
+                        </svg>
+                        <span style={{ color: "#666", fontSize: "10px" }}>Low → High</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
+
+{/* Himalayas image removed - Geography section now uses Mapbox zoom */}
             </div>
 
             {/* Right - Scrollable Text */}
             <div style={{ flex: "0 0 45%" }}>
-              {/* Population Text */}
+              {/* Population Text + Scatter Plot */}
               <div
                 ref={(el) => (scatterTextRefs.current[0] = el)}
                 style={{
                   minHeight: "100vh",
                   padding: "60px 40px",
                   display: "flex",
-                  alignItems: "center",
+                  flexDirection: "column",
+                  justifyContent: "center",
                 }}
               >
                 <div
@@ -5263,6 +6025,7 @@ export default function App() {
                     borderRadius: "8px",
                     boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
                     borderLeft: "4px solid #5699af",
+                    marginBottom: "30px",
                   }}
                 >
                   <h3
@@ -5287,8 +6050,7 @@ export default function App() {
                       marginBottom: "15px",
                     }}
                   >
-                    At first glance, one might expect densely populated states to have worse air quality. However, the scatter plot reveals a more nuanced picture.
-                  </p>
+                    The map reveals a dense concentration of population across the North Indian River Plain—spanning Uttar Pradesh, Bihar, and Delhi—one of the most crowded regions in the world.   </p>
                   <p
                     style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
@@ -5298,25 +6060,303 @@ export default function App() {
                       marginBottom: "15px",
                     }}
                   >
-                    While some of India's most populous states like <strong>Uttar Pradesh</strong> and <strong>Bihar</strong> do show elevated AQI levels, southern states with significant populations maintain remarkably cleaner air.
-                  </p>
+                   At first glance, such density might explain the region’s severe air pollution, as growing populations intensify traffic, industry, construction, and energy demand. Yet the data tells a more nuanced story in the correlation scatter plot. While some highly populated northern states show elevated AQI levels, southern metropolitan states like Karnataka and Tamil Nadu, despite large populations and expanding infrastructure, maintain comparatively cleaner air.     </p>
                   <p
                     style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       fontSize: "15px",
                       lineHeight: "1.8",
                       color: "#555",
-                      marginBottom: 0,
+                      marginBottom: "20px",
                     }}
                   >
-                    This suggests that <em>geographic location, industrial activity, and climate patterns</em> play a more decisive role than population density alone.
-                  </p>
+                   The contrast suggests that geography, industrial patterns, and climate conditions play a more decisive role than population density alone in shaping India’s air quality. 
+     </p>
+
+                  {/* Scatter Plot for Population - inside card */}
+                  <svg width="380" height="280" viewBox="0 0 500 400" style={{ overflow: "visible", marginLeft: "-10px" }}>
+                    {/* Axes */}
+                    <line x1="60" y1="350" x2="480" y2="350" stroke="#ccc" strokeWidth="1" />
+                    <line x1="60" y1="350" x2="60" y2="30" stroke="#ccc" strokeWidth="1" />
+
+                    {/* X-axis label */}
+                    <text x="270" y="390" textAnchor="middle" fontSize="12" fontFamily="Avenir, sans-serif" fill="#555">
+                      Population (millions)
+                    </text>
+
+                    {/* Y-axis label */}
+                    <text x="20" y="190" textAnchor="middle" fontSize="12" fontFamily="Avenir, sans-serif" fill="#555" transform="rotate(-90, 20, 190)">
+                      Average AQI
+                    </text>
+
+                    {/* X-axis ticks */}
+                    {[0, 50, 100, 150, 200, 250].map((val, i) => (
+                      <g key={`x-pop-${i}`}>
+                        <line x1={60 + (val / 250) * 420} y1="350" x2={60 + (val / 250) * 420} y2="355" stroke="#999" />
+                        <text x={60 + (val / 250) * 420} y="370" textAnchor="middle" fontSize="10" fill="#666">{val}</text>
+                      </g>
+                    ))}
+
+                    {/* Y-axis ticks */}
+                    {[0, 50, 100, 150, 200, 250, 300].map((val, i) => (
+                      <g key={`y-${i}`}>
+                        <line x1="55" y1={350 - (val / 300) * 320} x2="60" y2={350 - (val / 300) * 320} stroke="#999" />
+                        <text x="50" y={354 - (val / 300) * 320} textAnchor="end" fontSize="10" fill="#666">{val}</text>
+                      </g>
+                    ))}
+
+                    {/* Reference line at AQI 100 */}
+                    <line x1="60" y1={350 - (100 / 300) * 320} x2="480" y2={350 - (100 / 300) * 320} stroke="#87beb1" strokeWidth="1" strokeDasharray="4,4" />
+                    <text x="485" y={354 - (100 / 300) * 320} fontSize="9" fill="#87beb1">Satisfactory</text>
+
+                    {/* Data points */}
+                    {stateData.map((state, i) => {
+                      const popData = populationData.find(p =>
+                        p.state === state.state ||
+                        p.state.replace("&", "and") === state.state ||
+                        p.state.replace(" & ", " and ") === state.state
+                      );
+                      if (!popData || !state.avgAQI) return null;
+
+                      const pop = popData.population / 1000000;
+                      const rainfall = popData.rainfall || 0;
+                      const aqi = state.avgAQI;
+                      const x = 60 + (pop / 250) * 420;
+                      const y = 350 - (aqi / 300) * 320;
+
+                      // State coordinates for tooltip positioning on map (viewBox 612x696)
+                      const stateCoords = {
+                        "Andhra Pradesh": { x: 270, y: 490 },
+                        "Arunachal Pradesh": { x: 555, y: 215 },
+                        "Assam": { x: 505, y: 265 },
+                        "Bihar": { x: 385, y: 275 },
+                        "Chhattisgarh": { x: 305, y: 380 },
+                        "Delhi": { x: 195, y: 215 },
+                        "Goa": { x: 125, y: 515 },
+                        "Gujarat": { x: 95, y: 340 },
+                        "Haryana": { x: 180, y: 195 },
+                        "Himachal Pradesh": { x: 210, y: 145 },
+                        "Jharkhand": { x: 380, y: 320 },
+                        "Karnataka": { x: 175, y: 500 },
+                        "Kerala": { x: 180, y: 580 },
+                        "Madhya Pradesh": { x: 240, y: 310 },
+                        "Maharashtra": { x: 170, y: 420 },
+                        "Manipur": { x: 530, y: 290 },
+                        "Meghalaya": { x: 475, y: 270 },
+                        "Mizoram": { x: 510, y: 320 },
+                        "Nagaland": { x: 535, y: 260 },
+                        "Odisha": { x: 340, y: 390 },
+                        "Punjab": { x: 175, y: 170 },
+                        "Rajasthan": { x: 145, y: 280 },
+                        "Sikkim": { x: 435, y: 230 },
+                        "Tamil Nadu": { x: 215, y: 565 },
+                        "Telangana": { x: 245, y: 425 },
+                        "Tripura": { x: 495, y: 310 },
+                        "Uttar Pradesh": { x: 285, y: 260 },
+                        "Uttarakhand": { x: 245, y: 175 },
+                        "West Bengal": { x: 410, y: 330 },
+                        "Chandigarh": { x: 183, y: 163 },
+                      };
+                      const coord = stateCoords[state.state] || { x: 300, y: 400 };
+
+                      const isHovered = hoveredScatterPoint?.state === state.state;
+
+                      return (
+                        <circle
+                          key={`pop-${i}`}
+                          cx={x}
+                          cy={y}
+                          r={isHovered ? 7 : 5}
+                          fill="#5699af"
+                          fillOpacity={0.8}
+                          stroke="none"
+                          style={{ cursor: "pointer", transition: "r 0.15s ease" }}
+                          onMouseEnter={() => {
+                            setHoveredScatterPoint({
+                              state: state.state,
+                              aqi: Math.round(aqi),
+                              population: Math.round(pop),
+                              rainfall: Math.round(rainfall),
+                              region: popData.region || "Unknown",
+                              x: coord.x,
+                              y: coord.y,
+                            });
+                          }}
+                          onMouseLeave={() => setHoveredScatterPoint(null)}
+                        />
+                      );
+                    })}
+                  </svg>
                 </div>
               </div>
 
-              {/* Rainfall Text */}
+              {/* Rainfall Text + Scatter Plot */}
               <div
                 ref={(el) => (scatterTextRefs.current[1] = el)}
+                style={{
+                  minHeight: "100vh",
+                  padding: "60px 40px",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                }}
+              >
+                <div
+                  style={{
+                    maxWidth: "450px",
+                    padding: "30px",
+                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                    borderLeft: "4px solid #5699af",
+                    marginBottom: "30px",
+                  }}
+                >
+                  <h3
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "20px",
+                      fontWeight: "500",
+                      color: "#333",
+                      margin: 0,
+                    }}
+                  >
+                    Nature's Air Purifier: Rainfall
+                  </h3>
+                  <p
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "15px",
+                      lineHeight: "1.8",
+                      color: "#555",
+                      marginTop: "15px",
+                      marginBottom: "15px",
+                    }}
+                  >
+                    Air quality in India varies strongly with changes in temperature and rainfall. During the monsoon season (June to September), heavy rains act as a natural cleanser by capturing airborne particles and bringing them down to the ground. This frequent rainfall helps clear the atmosphere and results in some of the cleanest skies of the year. In contrast, winter months (November to February) bring colder temperatures, which increase the use of heating and cooking fires. These emissions add significant particulate matter to the air, worsening pollution levels.
+                  </p>
+                 
+
+                  {/* Scatter Plot for Rainfall - inside card */}
+                  <svg width="380" height="280" viewBox="0 0 500 400" style={{ overflow: "visible", marginLeft: "-10px" }}>
+                    {/* Axes */}
+                    <line x1="60" y1="350" x2="480" y2="350" stroke="#ccc" strokeWidth="1" />
+                    <line x1="60" y1="350" x2="60" y2="30" stroke="#ccc" strokeWidth="1" />
+
+                    {/* X-axis label */}
+                    <text x="270" y="390" textAnchor="middle" fontSize="12" fontFamily="Avenir, sans-serif" fill="#555">
+                      Annual Rainfall (mm)
+                    </text>
+
+                    {/* Y-axis label */}
+                    <text x="20" y="190" textAnchor="middle" fontSize="12" fontFamily="Avenir, sans-serif" fill="#555" transform="rotate(-90, 20, 190)">
+                      Average AQI
+                    </text>
+
+                    {/* X-axis ticks */}
+                    {[0, 1000, 2000, 3000, 4000].map((val, i) => (
+                      <g key={`x-rain-${i}`}>
+                        <line x1={60 + (val / 4500) * 420} y1="350" x2={60 + (val / 4500) * 420} y2="355" stroke="#999" />
+                        <text x={60 + (val / 4500) * 420} y="370" textAnchor="middle" fontSize="10" fill="#666">{val}</text>
+                      </g>
+                    ))}
+
+                    {/* Y-axis ticks */}
+                    {[0, 50, 100, 150, 200, 250, 300].map((val, i) => (
+                      <g key={`y-${i}`}>
+                        <line x1="55" y1={350 - (val / 300) * 320} x2="60" y2={350 - (val / 300) * 320} stroke="#999" />
+                        <text x="50" y={354 - (val / 300) * 320} textAnchor="end" fontSize="10" fill="#666">{val}</text>
+                      </g>
+                    ))}
+
+                    {/* Reference line at AQI 100 */}
+                    <line x1="60" y1={350 - (100 / 300) * 320} x2="480" y2={350 - (100 / 300) * 320} stroke="#87beb1" strokeWidth="1" strokeDasharray="4,4" />
+                    <text x="485" y={354 - (100 / 300) * 320} fontSize="9" fill="#87beb1">Satisfactory</text>
+
+                    {/* Data points */}
+                    {stateData.map((state, i) => {
+                      const popData = populationData.find(p =>
+                        p.state === state.state ||
+                        p.state.replace("&", "and") === state.state ||
+                        p.state.replace(" & ", " and ") === state.state
+                      );
+                      if (!popData || !state.avgAQI || !popData.rainfall) return null;
+
+                      const rainfall = popData.rainfall;
+                      const pop = popData.population / 1000000;
+                      const aqi = state.avgAQI;
+                      const x = 60 + (rainfall / 4500) * 420;
+                      const y = 350 - (aqi / 300) * 320;
+
+                      // State coordinates for tooltip positioning on map (viewBox 612x696)
+                      const stateCoords = {
+                        "Andhra Pradesh": { x: 270, y: 490 },
+                        "Arunachal Pradesh": { x: 555, y: 215 },
+                        "Assam": { x: 505, y: 265 },
+                        "Bihar": { x: 385, y: 275 },
+                        "Chhattisgarh": { x: 305, y: 380 },
+                        "Delhi": { x: 195, y: 215 },
+                        "Goa": { x: 125, y: 515 },
+                        "Gujarat": { x: 95, y: 340 },
+                        "Haryana": { x: 180, y: 195 },
+                        "Himachal Pradesh": { x: 210, y: 145 },
+                        "Jharkhand": { x: 380, y: 320 },
+                        "Karnataka": { x: 175, y: 500 },
+                        "Kerala": { x: 180, y: 580 },
+                        "Madhya Pradesh": { x: 240, y: 310 },
+                        "Maharashtra": { x: 170, y: 420 },
+                        "Manipur": { x: 530, y: 290 },
+                        "Meghalaya": { x: 475, y: 270 },
+                        "Mizoram": { x: 510, y: 320 },
+                        "Nagaland": { x: 535, y: 260 },
+                        "Odisha": { x: 340, y: 390 },
+                        "Punjab": { x: 175, y: 170 },
+                        "Rajasthan": { x: 145, y: 280 },
+                        "Sikkim": { x: 435, y: 230 },
+                        "Tamil Nadu": { x: 215, y: 565 },
+                        "Telangana": { x: 245, y: 425 },
+                        "Tripura": { x: 495, y: 310 },
+                        "Uttar Pradesh": { x: 285, y: 260 },
+                        "Uttarakhand": { x: 245, y: 175 },
+                        "West Bengal": { x: 410, y: 330 },
+                        "Chandigarh": { x: 183, y: 163 },
+                      };
+                      const coord = stateCoords[state.state] || { x: 300, y: 400 };
+
+                      const isHovered = hoveredScatterPoint?.state === state.state;
+
+                      return (
+                        <circle
+                          key={`rain-${i}`}
+                          cx={x}
+                          cy={y}
+                          r={isHovered ? 7 : 5}
+                          fill="#5699af"
+                          fillOpacity={0.8}
+                          stroke="none"
+                          style={{ cursor: "pointer", transition: "r 0.15s ease" }}
+                          onMouseEnter={() => {
+                            setHoveredScatterPoint({
+                              state: state.state,
+                              aqi: Math.round(aqi),
+                              population: Math.round(pop),
+                              rainfall: Math.round(rainfall),
+                              region: popData.region || "Unknown",
+                              x: coord.x,
+                              y: coord.y,
+                            });
+                          }}
+                          onMouseLeave={() => setHoveredScatterPoint(null)}
+                        />
+                      );
+                    })}
+                  </svg>
+                </div>
+              </div>
+
+              {/* Wind Text */}
+              <div
+                ref={(el) => (scatterTextRefs.current[2] = el)}
                 style={{
                   minHeight: "100vh",
                   padding: "60px 40px",
@@ -5343,7 +6383,7 @@ export default function App() {
                       margin: 0,
                     }}
                   >
-                    Nature's Air Purifier: Rainfall
+                    Wind and Air Quality
                   </h3>
                   <p
                     style={{
@@ -5355,7 +6395,7 @@ export default function App() {
                       marginBottom: "15px",
                     }}
                   >
-                    The relationship between rainfall and air quality tells a compelling story. States receiving higher annual rainfall consistently show lower AQI values.
+                    Wind plays a crucial role in dispersing pollutants. When winds are strong, polluted air is carried away and diluted, improving overall air quality.
                   </p>
                   <p
                     style={{
@@ -5366,25 +6406,14 @@ export default function App() {
                       marginBottom: "15px",
                     }}
                   >
-                    Coastal and southern states like <strong>Kerala</strong>, <strong>Karnataka</strong>, and <strong>Goa</strong> benefit from abundant monsoon rains that wash pollutants from the air, while drier northern states struggle with persistent haze.
-                  </p>
-                  <p
-                    style={{
-                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "15px",
-                      lineHeight: "1.8",
-                      color: "#555",
-                      marginBottom: 0,
-                    }}
-                  >
-                    This natural cleansing effect highlights why <em>seasonal patterns</em> play such a crucial role in India's air quality story.
+                    The animation shows wind patterns across India, revealing how air masses move across the subcontinent.
                   </p>
                 </div>
               </div>
 
               {/* Geography Text */}
               <div
-                ref={(el) => (scatterTextRefs.current[2] = el)}
+                ref={(el) => (scatterTextRefs.current[3] = el)}
                 style={{
                   minHeight: "100vh",
                   padding: "60px 40px",
@@ -5423,7 +6452,7 @@ export default function App() {
                       marginBottom: 0,
                     }}
                   >
-                    The Himalayan mountain range acts as a natural barrier, trapping pollutants in the Indo-Gangetic Plain. Cold air from the mountains pushes pollution back down, while the lack of strong winds prevents dispersion. This geographic phenomenon explains why northern states consistently experience higher pollution levels compared to coastal and peninsular regions.
+                    In northern India, the Indo-Gangetic Plain is geographically enclosed by the Himalayas. This mountain barrier limits airflow, especially during winter, trapping pollutants near the ground and preventing them from escaping. As a result, polluted air stagnates and accumulates over time, leading to severe pollution episodes.
                   </p>
                 </div>
               </div>
@@ -6486,11 +7515,13 @@ export default function App() {
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = "#5699af";
+                  e.currentTarget.style.justifyContent = "flex-start";
                   e.currentTarget.querySelector('.box-title').style.display = "none";
                   e.currentTarget.querySelector('.hover-text').style.display = "block";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = "#e0e0e0";
+                  e.currentTarget.style.justifyContent = "center";
                   e.currentTarget.querySelector('.box-title').style.display = "block";
                   e.currentTarget.querySelector('.hover-text').style.display = "none";
                 }}
@@ -6519,7 +7550,7 @@ export default function App() {
                     margin: 0,
                     display: "none",
                     overflow: "auto",
-                    maxHeight: "110px",
+                    maxHeight: "100%",
                   }}
                 >
                   {item.text}
@@ -6573,9 +7604,8 @@ export default function App() {
           <div
             style={{
               position: "relative",
-              width: "60%",
-              maxWidth: "600px",
-              height: "200px",
+              width: "80%",
+              height: "280px",
               overflow: "hidden",
               marginBottom: "50px",
             }}
@@ -6585,9 +7615,10 @@ export default function App() {
               style={{
                 position: "absolute",
                 top: 0,
-                left: 0,
-                width: "100%",
-                transform: `translateX(${100 - cyclingProgress * 400}%)`,
+                left: "25%",
+                width: "50%",
+                maxWidth: "550px",
+                transform: `translateX(${100 - cyclingProgress * 300}%)`,
               }}
             >
               <h3
@@ -6621,9 +7652,10 @@ export default function App() {
               style={{
                 position: "absolute",
                 top: 0,
-                left: 0,
-                width: "100%",
-                transform: `translateX(${100 - (cyclingProgress - 0.5) * 400}%)`,
+                left: "25%",
+                width: "50%",
+                maxWidth: "550px",
+                transform: `translateX(${100 - (cyclingProgress - 0.5) * 300}%)`,
               }}
             >
               <h3

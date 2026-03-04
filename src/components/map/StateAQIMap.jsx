@@ -707,7 +707,7 @@ function renderMiniCircularViz(stateData, stateName, size = 80) {
     const outerX = centerX + outerR * Math.cos(angle);
     const outerY = centerY + outerR * Math.sin(angle);
 
-    return `<line x1="${innerX}" y1="${innerY}" x2="${outerX}" y2="${outerY}" stroke="${color}" stroke-width="${dashWidth}" opacity="0.8"/>`;
+    return `<line x1="${innerX}" y1="${innerY}" x2="${outerX}" y2="${outerY}" stroke="${color}" stroke-width="${dashWidth}" opacity="1"/>`;
   }).join("");
 
   // Build line graph
@@ -909,7 +909,7 @@ function renderBubbleCluster(stateData, stateName, size = 90) {
     const x = centerX + dist * Math.cos(angleRad);
     const y = centerY + dist * Math.sin(angleRad);
 
-    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${radius.toFixed(1)}" fill="${cat.color}" opacity="0.85" stroke="#fff" stroke-width="1"/>`;
+    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${radius.toFixed(1)}" fill="${cat.color}" opacity="1" stroke="#fff" stroke-width="1"/>`;
   }).join("");
 
   return `
@@ -965,7 +965,7 @@ function StateAQICategoryGrid({ stateData }) {
       const x = centerX + dist * Math.cos(angleRad);
       const y = centerY + dist * Math.sin(angleRad);
 
-      return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${radius.toFixed(1)}" fill="${cat.color}" opacity="0.9" stroke="#fff" stroke-width="1.5"/>`;
+      return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${radius.toFixed(1)}" fill="${cat.color}" opacity="1" stroke="#fff" stroke-width="1.5"/>`;
     }).join("");
 
     return bubbles;

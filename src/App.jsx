@@ -8588,10 +8588,10 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
         <div
           style={{
             backgroundColor: "#1a365d",
-            width: "100vw",
-            marginLeft: "calc(-50vw + 50%)",
+            width: "100%",
             marginTop: "120px",
             padding: "80px 40px",
+            boxSizing: "border-box",
           }}
         >
           <h2

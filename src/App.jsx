@@ -3241,6 +3241,24 @@ export default function App() {
                     </div>
                   </div>
                 )}
+
+                {/* Instruction text */}
+                <p
+                  style={{
+                    position: "absolute",
+                    bottom: "-40px",
+                    left: "35%",
+                    transform: "translateX(-50%)",
+                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                    fontSize: "11px",
+                    color: "#888",
+                    fontStyle: "italic",
+                    margin: 0,
+                    textAlign: "center",
+                  }}
+                >
+                  Hover for more information
+                </p>
               </div>
 
               {/* Six Cities map - Same style as Delhi map */}
@@ -3431,6 +3449,24 @@ export default function App() {
                     ))}
                   </div>
                 )}
+
+                {/* Instruction text */}
+                <p
+                  style={{
+                    position: "absolute",
+                    bottom: "-40px",
+                    left: "35%",
+                    transform: "translateX(-50%)",
+                    fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                    fontSize: "11px",
+                    color: "#888",
+                    fontStyle: "italic",
+                    margin: 0,
+                    textAlign: "center",
+                  }}
+                >
+                  Hover for more information
+                </p>
               </div>
               </div>
             </div>
@@ -5172,6 +5208,25 @@ export default function App() {
                   </div>
                 </div>
               )}
+
+              {/* Instruction text */}
+              <p
+                style={{
+                  position: "absolute",
+                  bottom: "-25px",
+                  left: "35%",
+                  transform: "translateX(-50%)",
+                  fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                  fontSize: "11px",
+                  color: "#888",
+                  fontStyle: "italic",
+                  margin: 0,
+                  textAlign: "center",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Hover for more information
+              </p>
               </div>
             </div>
 
@@ -6128,10 +6183,14 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                       // Right semi-circle path (Population/Rainfall) - arc from top to bottom, curving right
                       const rightPath = `M ${coord.x} ${coord.y - popR} A ${popR} ${popR} 0 0 1 ${coord.x} ${coord.y + popR} Z`;
 
+                      // Dim non-hovered circles when any circle is hovered
+                      const isDimmed = hoveredScatterPoint && !isHovered;
+                      const groupOpacity = isDimmed ? 0.3 : 1;
+
                       return (
                         <g
                           key={state.state}
-                          style={{ cursor: "pointer" }}
+                          style={{ cursor: "pointer", opacity: groupOpacity, transition: "opacity 0.2s ease" }}
                           onMouseEnter={() => {
                             setHoveredScatterPoint({
                               state: state.state,
@@ -6219,6 +6278,20 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                         <span style={{ color: "#666", fontSize: "10px" }}>Low → High</span>
                       </div>
                     </div>
+
+                    {/* Instruction text */}
+                    <p
+                      style={{
+                        color: "#888",
+                        fontStyle: "italic",
+                        fontSize: "10px",
+                        marginTop: "12px",
+                        marginBottom: 0,
+                        textAlign: "center",
+                      }}
+                    >
+                      Hover for more information
+                    </p>
                   </div>
                 )}
               </div>
@@ -6382,6 +6455,7 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                       const coord = stateCoords[state.state] || { x: 300, y: 400 };
 
                       const isHovered = hoveredScatterPoint?.state === state.state;
+                      const isDimmed = hoveredScatterPoint && !isHovered;
 
                       return (
                         <circle
@@ -6390,9 +6464,9 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                           cy={y}
                           r={isHovered ? 7 : 5}
                           fill="#5699af"
-                          fillOpacity={0.8}
+                          fillOpacity={isDimmed ? 0.2 : 0.8}
                           stroke="none"
-                          style={{ cursor: "pointer", transition: "r 0.15s ease" }}
+                          style={{ cursor: "pointer", transition: "r 0.15s ease, fill-opacity 0.2s ease" }}
                           onMouseEnter={() => {
                             setHoveredScatterPoint({
                               state: state.state,
@@ -6575,6 +6649,7 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                       const coord = stateCoords[state.state] || { x: 300, y: 400 };
 
                       const isHovered = hoveredScatterPoint?.state === state.state;
+                      const isDimmed = hoveredScatterPoint && !isHovered;
 
                       return (
                         <circle
@@ -6583,9 +6658,9 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                           cy={y}
                           r={isHovered ? 7 : 5}
                           fill="#5699af"
-                          fillOpacity={0.8}
+                          fillOpacity={isDimmed ? 0.2 : 0.8}
                           stroke="none"
-                          style={{ cursor: "pointer", transition: "r 0.15s ease" }}
+                          style={{ cursor: "pointer", transition: "r 0.15s ease, fill-opacity 0.2s ease" }}
                           onMouseEnter={() => {
                             setHoveredScatterPoint({
                               state: state.state,
@@ -6815,6 +6890,7 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                 }}
               >
                 Source: <a href="https://www.kaggle.com/datasets/bhadramohit/india-air-quality-index2024-dataset" target="_blank" rel="noopener noreferrer" style={{ color: "#5699af" }}>Kaggle - India Air Quality Index 2024 Dataset</a>
+                <span style={{ display: "block", fontStyle: "italic", fontSize: "11px", marginTop: "5px" }}>Hover for more information</span>
               </p>
             </div>
 
@@ -7112,10 +7188,11 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                   fontSize: "11px",
                   color: "#888",
                   marginTop: "15px",
-                  textAlign: "center",
+                  textAlign: "left",
                 }}
               >
                 Source: <a href="https://www.kaggle.com/datasets/bhadramohit/india-air-quality-index2024-dataset" target="_blank" rel="noopener noreferrer" style={{ color: "#5699af", textDecoration: "none" }}>Kaggle - India Air Quality Index 2024 Dataset</a>
+                <span style={{ display: "block", fontStyle: "italic", marginTop: "5px" }}>Hover for more information</span>
               </p>
             </div>
 
@@ -7724,10 +7801,10 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                 margin: "20px 0 0 0",
                 textAlign: "left",
                 background: "#fff",
-                paddingBottom: "20px",
               }}
             >
               Source: <a href="https://aqli.epic.uchicago.edu/files/India%20FactSheet_2025_GlobalWV.pdf" target="_blank" rel="noopener noreferrer" style={{ color: "#5699af" }}>AQLI - India Fact Sheet 2025</a>
+              <span style={{ display: "block", fontStyle: "italic", fontSize: "11px", marginTop: "5px" }}>Hover for more information</span>
             </p>
           </div>
         </div>
@@ -7863,13 +7940,12 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
               </div>
             ))}
           </div>
-          <div style={{ textAlign: "center", marginTop: "20px" }}>
+          <div style={{ textAlign: "center", marginTop: "20px", fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif" }}>
             <a
               href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5392152"
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                 fontSize: "12px",
                 color: "#5699af",
                 textDecoration: "none",
@@ -7877,6 +7953,7 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
             >
               Source: SSRN
             </a>
+            <span style={{ display: "block", fontStyle: "italic", fontSize: "11px", color: "#888", marginTop: "5px" }}>Hover for more information</span>
           </div>
         </div>
       )}

@@ -12,46 +12,31 @@ html, body {
 }
 
 /* Responsive scaling for different screen sizes */
-/* Design is optimized for 1920px width */
+/* Design is optimized for 14" MacBook Pro (1512px CSS width) as baseline */
 
-/* Retina 13.3" MacBooks (1680px CSS width) */
-@media screen and (max-width: 1680px) {
+/* 13.3" MacBooks and smaller laptops */
+@media screen and (max-width: 1440px) {
+  #root {
+    zoom: 0.92;
+  }
+}
+
+@media screen and (max-width: 1366px) {
   #root {
     zoom: 0.88;
   }
 }
 
-/* MacBook Pro 13" and similar (1440-1512px CSS width) */
-@media screen and (max-width: 1536px) {
-  #root {
-    zoom: 0.82;
-  }
-}
-
-/* Older 13" laptops / Windows laptops with scaling */
-@media screen and (max-width: 1440px) {
-  #root {
-    zoom: 0.78;
-  }
-}
-
-/* Small laptops (13" and below at lower DPI) */
-@media screen and (max-width: 1366px) {
-  #root {
-    zoom: 0.72;
-  }
-}
-
 @media screen and (max-width: 1280px) {
   #root {
-    zoom: 0.68;
+    zoom: 0.82;
   }
 }
 
 /* Very small screens */
 @media screen and (max-width: 1024px) {
   #root {
-    zoom: 0.55;
+    zoom: 0.65;
   }
 }
 

@@ -2075,31 +2075,6 @@ export default function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Refresh ScrollTrigger after page load to account for CSS zoom
-  useEffect(() => {
-    const handleLoad = () => {
-      // Delay refresh to ensure zoom is applied
-      setTimeout(() => {
-        ScrollTrigger.refresh();
-      }, 100);
-    };
-
-    // If document already loaded, refresh immediately
-    if (document.readyState === 'complete') {
-      handleLoad();
-    } else {
-      window.addEventListener('load', handleLoad);
-    }
-
-    // Also refresh on resize (in case zoom changes with viewport)
-    window.addEventListener('resize', () => ScrollTrigger.refresh());
-
-    return () => {
-      window.removeEventListener('load', handleLoad);
-      window.removeEventListener('resize', () => ScrollTrigger.refresh());
-    };
-  }, []);
-
   // Update India map SVG when hovered state changes or active state changes in scrollable mode
   useEffect(() => {
     if (!indiaMapRef.current) return;

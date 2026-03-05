@@ -2957,8 +2957,7 @@ export default function App() {
               </p>
               <div
                 style={{
-                  width: "100%",
-                  maxWidth: "400px",
+                  width: "400px",
                   height: "2px",
                   backgroundColor: "#000",
                   margin: "0 0 30px 0",
@@ -4495,9 +4494,6 @@ export default function App() {
                 minHeight: "auto",
                 backgroundColor: "#fff",
                 zIndex: 10,
-                overflow: "hidden",
-                width: "100%",
-                maxWidth: "100vw",
               }}
             >
               {/* Serpentine pattern container */}
@@ -4511,23 +4507,20 @@ export default function App() {
                 <div
                   style={{
                     position: "relative",
-                    width: "100%",
-                    maxWidth: "1000px",
+                    width: "1000px",
                     height: "450px",
                   }}
                 >
                 {/* Full serpentine pattern with row-by-row reveal */}
                 <svg
-                  width="100%"
+                  width="1020"
                   height="450"
                   viewBox="-20 0 1020 450"
-                  preserveAspectRatio="xMidYMid meet"
                   style={{
                     position: "absolute",
                     top: 0,
-                    left: 0,
+                    left: 20,
                     overflow: "visible",
-                    maxWidth: "1020px",
                   }}
                 >
                   {(() => {
@@ -4919,11 +4912,9 @@ export default function App() {
                   const dotY = (event.row - 1) * rowHeight + 10;
 
                   // Position popup - to the left for specific years (2009, 2014, 2016, 2019) to avoid blocking animation
-                  const popupWidth = yearToShow === 2019 ? 200 : 250;
+                  const popupWidth = yearToShow === 2019 ? 220 : 280;
                   const showOnLeft = yearToShow === 2009 || yearToShow === 2014 || yearToShow === 2016 || yearToShow === 2019;
-                  let popupLeft = showOnLeft ? dotX - popupWidth - 40 : dotX + 40;
-                  // Clamp popup position within bounds
-                  popupLeft = Math.max(10, Math.min(popupLeft, 700));
+                  const popupLeft = showOnLeft ? dotX - popupWidth - 60 : dotX + 60;
                   const popupTop = dotY - 40;
 
                   return (
@@ -4933,11 +4924,10 @@ export default function App() {
                         left: `${popupLeft}px`,
                         top: `${popupTop}px`,
                         width: `${popupWidth}px`,
-                        maxWidth: "90%",
                         backgroundColor: "#fff",
                         border: "2px solid #5699af",
                         borderRadius: "8px",
-                        padding: "12px",
+                        padding: "16px",
                         boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                         opacity: 1,
                         zIndex: 100,
@@ -5059,8 +5049,7 @@ export default function App() {
               <div
                 style={{
                   position: "relative",
-                  width: "100%",
-                  maxWidth: "600px",
+                  width: "600px",
                   height: "684px",
                   overflow: "visible",
                 }}
@@ -5070,7 +5059,9 @@ export default function App() {
                 ref={standAloneAqiMapRef}
                 data="/india-states.svg"
                 type="image/svg+xml"
-                style={{ pointerEvents: "none", position: "absolute", top: 0, left: 0, width: "100%", height: "auto", maxWidth: "600px" }}
+                width="600"
+                height="684"
+                style={{ pointerEvents: "none", position: "absolute", top: 0, left: 0 }}
                 onLoad={() => {
                   if (standAloneAqiMapRef.current) {
                     const svgDoc = standAloneAqiMapRef.current.contentDocument;
@@ -7974,8 +7965,6 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
           height: "300vh",
           backgroundColor: "#fff",
           position: "relative",
-          overflow: "hidden",
-          maxWidth: "100vw",
         }}
       >
         <div

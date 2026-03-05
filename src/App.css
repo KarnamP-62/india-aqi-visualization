@@ -12,38 +12,82 @@ html, body {
 }
 
 /* Responsive scaling for different screen sizes */
-/* Small laptops (13" and below) */
+/* Design is optimized for 1920px width */
+
+/* Retina 13.3" MacBooks (1680px CSS width) */
+@media screen and (max-width: 1680px) {
+  #root {
+    zoom: 0.88;
+  }
+}
+
+/* MacBook Pro 13" and similar (1440-1512px CSS width) */
+@media screen and (max-width: 1536px) {
+  #root {
+    zoom: 0.82;
+  }
+}
+
+/* Older 13" laptops / Windows laptops with scaling */
+@media screen and (max-width: 1440px) {
+  #root {
+    zoom: 0.78;
+  }
+}
+
+/* Small laptops (13" and below at lower DPI) */
 @media screen and (max-width: 1366px) {
   #root {
-    zoom: 0.9;
+    zoom: 0.72;
   }
 }
 
 @media screen and (max-width: 1280px) {
   #root {
-    zoom: 0.85;
+    zoom: 0.68;
   }
 }
 
 /* Very small screens */
 @media screen and (max-width: 1024px) {
   #root {
-    zoom: 0.75;
+    zoom: 0.55;
   }
 }
 
 /* Large screens / Presentations */
+/* Standard 1080p monitors and presentations */
 @media screen and (min-width: 1920px) {
   #root {
+    zoom: 1;
     max-width: 1920px;
     margin: 0 auto;
   }
 }
 
+/* 1440p monitors */
 @media screen and (min-width: 2560px) {
   #root {
-    zoom: 1.2;
-    max-width: 2200px;
+    zoom: 1.25;
+    max-width: 2000px;
+    margin: 0 auto;
+  }
+}
+
+/* 4K displays (3840px) */
+@media screen and (min-width: 3840px) {
+  #root {
+    zoom: 1.8;
+    max-width: 2100px;
+    margin: 0 auto;
+  }
+}
+
+/* Ultra-wide and 5K displays */
+@media screen and (min-width: 5120px) {
+  #root {
+    zoom: 2.4;
+    max-width: 2100px;
     margin: 0 auto;
   }
 }

@@ -11,6 +11,43 @@ html, body {
   padding: 0;
 }
 
+/* Responsive scaling for different screen sizes */
+/* Small laptops (13" and below) */
+@media screen and (max-width: 1366px) {
+  #root {
+    zoom: 0.9;
+  }
+}
+
+@media screen and (max-width: 1280px) {
+  #root {
+    zoom: 0.85;
+  }
+}
+
+/* Very small screens */
+@media screen and (max-width: 1024px) {
+  #root {
+    zoom: 0.75;
+  }
+}
+
+/* Large screens / Presentations */
+@media screen and (min-width: 1920px) {
+  #root {
+    max-width: 1920px;
+    margin: 0 auto;
+  }
+}
+
+@media screen and (min-width: 2560px) {
+  #root {
+    zoom: 1.2;
+    max-width: 2200px;
+    margin: 0 auto;
+  }
+}
+
 .logo {
   height: 6em;
   padding: 1.5em;

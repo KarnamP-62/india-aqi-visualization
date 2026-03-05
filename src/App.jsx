@@ -8497,21 +8497,6 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
               />
             </svg>
 
-            {/* Progress indicator */}
-            <div
-              ref={progressTextRef}
-              style={{
-                position: "absolute",
-                bottom: "15px",
-                left: "50%",
-                transform: "translateX(-50%)",
-                fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                fontSize: "12px",
-                color: "#999",
-              }}
-            >
-              {Math.round(cyclingProgress * 100)}%
-            </div>
           </div>
 
           {/* Scroll hint */}

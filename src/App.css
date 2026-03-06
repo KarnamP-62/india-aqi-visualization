@@ -183,3 +183,29 @@ html, body {
     transform: translateY(-5px);
   }
 }
+
+/* ================================
+   MOBILE RESPONSIVE STYLES
+   ================================ */
+
+/* Mobile breakpoint: 320px - 767px */
+@media (max-width: 767px) {
+  /* Prevent horizontal scroll */
+  html, body {
+    overflow-x: hidden;
+  }
+
+  /* Reduce large paddings on mobile */
+  :root {
+    --padding-section-x: clamp(15px, 4vw, 30px);
+    --padding-section-y: clamp(30px, 6vh, 60px);
+  }
+}
+
+/* Tablet breakpoint: 768px - 1023px */
+@media (min-width: 768px) and (max-width: 1023px) {
+  :root {
+    --padding-section-x: clamp(20px, 4vw, 60px);
+    --padding-section-y: clamp(40px, 6vh, 80px);
+  }
+}

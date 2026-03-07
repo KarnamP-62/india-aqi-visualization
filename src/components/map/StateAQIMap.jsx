@@ -79,7 +79,7 @@ function aggregateCityMonthly(data) {
 }
 
 // Life Expectancy Gains dumbbell plot component
-function LifeExpectancyPlot({ data }) {
+function LifeExpectancyPlot({ data, isMobile = false }) {
   const [tooltip, setTooltip] = useState(null);
   const svgRef = useRef(null);
 
@@ -103,9 +103,12 @@ function LifeExpectancyPlot({ data }) {
     URL.revokeObjectURL(url);
   };
 
-  const margin = { top: 20, right: 40, bottom: 120, left: 70 };
-  const width = 1100;
-  const height = 500;
+  // Responsive dimensions
+  const margin = isMobile
+    ? { top: 15, right: 15, bottom: 100, left: 40 }
+    : { top: 20, right: 40, bottom: 120, left: 70 };
+  const width = isMobile ? 360 : 1100;
+  const height = isMobile ? 400 : 500;
   const plotW = width - margin.left - margin.right;
   const plotH = height - margin.top - margin.bottom;
 
@@ -122,9 +125,9 @@ function LifeExpectancyPlot({ data }) {
   const nationalColor = "#c1616b"; // Red for National
 
   return (
-    <div style={{ display: "flex", justifyContent: "center", padding: "20px 0", background: "#fff" }}>
+    <div style={{ display: "flex", justifyContent: "center", padding: isMobile ? "10px 0" : "20px 0", background: "#fff", width: "100%", overflowX: isMobile ? "auto" : "visible" }}>
       <div style={{ position: "relative" }}>
-        <svg ref={svgRef} width={width} height={height - 30} style={{ fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif" }}>
+        <svg ref={svgRef} width={width} height={height - 30} viewBox={`0 0 ${width} ${height - 30}`} style={{ fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif", maxWidth: "100%" }}>
           {/* Grid lines */}
           {[0, 2, 4, 6, 8, 10].filter(v => v <= maxGain).map((val) => (
             <g key={val}>
@@ -137,10 +140,10 @@ function LifeExpectancyPlot({ data }) {
                 strokeWidth={1}
               />
               <text
-                x={margin.left - 10}
+                x={margin.left - (isMobile ? 5 : 10)}
                 y={yScale(val) + 4}
                 textAnchor="end"
-                fontSize="10"
+                fontSize={isMobile ? "8" : "10"}
                 fill="#888"
               >
                 {val}
@@ -150,15 +153,15 @@ function LifeExpectancyPlot({ data }) {
 
           {/* Y-axis label */}
           <text
-            x={18}
+            x={isMobile ? 12 : 18}
             y={margin.top + plotH / 2}
-            transform={`rotate(-90, 18, ${margin.top + plotH / 2})`}
+            transform={`rotate(-90, ${isMobile ? 12 : 18}, ${margin.top + plotH / 2})`}
             textAnchor="middle"
-            fontSize="12"
+            fontSize={isMobile ? "9" : "12"}
             fill="#555"
             fontWeight="500"
           >
-            Life Expectancy Gain (Years)
+            {isMobile ? "Life Exp. Gain (Yrs)" : "Life Expectancy Gain (Years)"}
           </text>
 
           {/* WHO Area (blue) - rendered first so it's behind */}
@@ -235,10 +238,10 @@ function LifeExpectancyPlot({ data }) {
                 <circle
                   cx={x}
                   cy={yWho}
-                  r={5}
+                  r={isMobile ? 3 : 5}
                   fill={whoColor}
                   stroke="#fff"
-                  strokeWidth={1.5}
+                  strokeWidth={isMobile ? 1 : 1.5}
                   style={{ cursor: "pointer" }}
                   onMouseEnter={(e) => {
                     const rect = e.target.getBoundingClientRect();
@@ -258,10 +261,10 @@ function LifeExpectancyPlot({ data }) {
                 <circle
                   cx={x}
                   cy={yNat}
-                  r={5}
+                  r={isMobile ? 3 : 5}
                   fill={nationalColor}
                   stroke="#fff"
-                  strokeWidth={1.5}
+                  strokeWidth={isMobile ? 1 : 1.5}
                   style={{ cursor: "pointer" }}
                   onMouseEnter={(e) => {
                     const rect = e.target.getBoundingClientRect();
@@ -282,23 +285,35 @@ function LifeExpectancyPlot({ data }) {
                   x={x}
                   y={margin.top + plotH + 10}
                   textAnchor="start"
-                  fontSize="9"
+                  fontSize={isMobile ? "7" : "9"}
                   fill="#555"
                   transform={`rotate(45, ${x}, ${margin.top + plotH + 10})`}
                 >
-                  {d.state.length > 18 ? d.state.substring(0, 16) + "..." : d.state}
+                  {isMobile
+                    ? (d.state.length > 12 ? d.state.substring(0, 10) + "..." : d.state)
+                    : (d.state.length > 18 ? d.state.substring(0, 16) + "..." : d.state)
+                  }
                 </text>
               </g>
             );
           })}
 
           {/* Legend */}
-          <g transform={`translate(${width - 280}, 5)`}>
-            <circle cx={0} cy={0} r={5} fill={whoColor} />
-            <text x={10} y={4} fontSize="10" fill="#555">WHO Guideline (5 μg/m³)</text>
-            <circle cx={150} cy={0} r={5} fill={nationalColor} />
-            <text x={160} y={4} fontSize="10" fill="#555">National Std (40 μg/m³)</text>
-          </g>
+          {isMobile ? (
+            <g transform={`translate(${margin.left}, ${height - 55})`}>
+              <circle cx={0} cy={0} r={4} fill={whoColor} />
+              <text x={8} y={3} fontSize="8" fill="#555">WHO (5 μg/m³)</text>
+              <circle cx={100} cy={0} r={4} fill={nationalColor} />
+              <text x={108} y={3} fontSize="8" fill="#555">National (40 μg/m³)</text>
+            </g>
+          ) : (
+            <g transform={`translate(${width - 280}, 5)`}>
+              <circle cx={0} cy={0} r={5} fill={whoColor} />
+              <text x={10} y={4} fontSize="10" fill="#555">WHO Guideline (5 μg/m³)</text>
+              <circle cx={150} cy={0} r={5} fill={nationalColor} />
+              <text x={160} y={4} fontSize="10" fill="#555">National Std (40 μg/m³)</text>
+            </g>
+          )}
         </svg>
 
         {/* Tooltip */}

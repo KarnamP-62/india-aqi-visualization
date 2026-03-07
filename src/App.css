@@ -1,3 +1,37 @@
+/* Responsive Design Variables */
+:root {
+  /* Spacing scale using clamp for fluid responsive sizing */
+  --space-xs: clamp(4px, 0.5vw, 8px);
+  --space-sm: clamp(8px, 1vw, 16px);
+  --space-md: clamp(16px, 2vw, 32px);
+  --space-lg: clamp(32px, 4vw, 64px);
+  --space-xl: clamp(64px, 8vw, 128px);
+
+  /* Typography scale - fluid font sizes */
+  --text-xs: clamp(10px, 0.7rem, 12px);
+  --text-sm: clamp(11px, 0.8rem, 13px);
+  --text-base: 16px;
+  --text-lg: clamp(16px, 1.125rem, 18px);
+  --text-xl: clamp(18px, 1.25rem, 22px);
+  --text-2xl: clamp(20px, 1.5rem, 24px);
+  --text-3xl: clamp(24px, 2rem, 28px);
+  --text-4xl: clamp(28px, 2.5vw, 36px);
+  --text-5xl: clamp(32px, 4vw, 48px);
+  --text-6xl: clamp(40px, 5vw, 64px);
+  --text-7xl: clamp(48px, 6vw, 80px);
+
+  /* Container widths */
+  --container-xs: min(400px, 95vw);
+  --container-sm: min(450px, 95vw);
+  --container-md: min(800px, 90vw);
+  --container-lg: min(1000px, 90vw);
+  --container-xl: min(1400px, 95vw);
+
+  /* Responsive paddings */
+  --padding-section-x: clamp(20px, 5vw, 160px);
+  --padding-section-y: clamp(40px, 8vh, 140px);
+}
+
 html, body {
   margin: 0;
   padding: 0;
@@ -147,5 +181,31 @@ html, body {
   }
   60% {
     transform: translateY(-5px);
+  }
+}
+
+/* ================================
+   MOBILE RESPONSIVE STYLES
+   ================================ */
+
+/* Mobile breakpoint: 320px - 767px */
+@media (max-width: 767px) {
+  /* Prevent horizontal scroll */
+  html, body {
+    overflow-x: hidden;
+  }
+
+  /* Reduce large paddings on mobile */
+  :root {
+    --padding-section-x: clamp(15px, 4vw, 30px);
+    --padding-section-y: clamp(30px, 6vh, 60px);
+  }
+}
+
+/* Tablet breakpoint: 768px - 1023px */
+@media (min-width: 768px) and (max-width: 1023px) {
+  :root {
+    --padding-section-x: clamp(20px, 4vw, 60px);
+    --padding-section-y: clamp(40px, 6vh, 80px);
   }
 }

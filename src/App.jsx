@@ -42,6 +42,8 @@ export default function App() {
   const [hoveredCity, setHoveredCity] = useState(null); // hovered city in Six Cities map
   const [cityTooltipPos, setCityTooltipPos] = useState({ x: 0, y: 0 }); // tooltip position for Six Cities
   const [lifeExpData, setLifeExpData] = useState([]); // life expectancy data for visualization
+  const [timelineScale, setTimelineScale] = useState(1); // scale for timeline section responsiveness
+  const [vizScale, setVizScale] = useState(1); // scale for circular visualization responsiveness
   const [populationData, setPopulationData] = useState([]); // population data by state (includes rainfall)
   const [windData, setWindData] = useState([]); // wind direction data by city for 2024
   const [windMapLoaded, setWindMapLoaded] = useState(false); // track when wind map SVG is loaded
@@ -61,6 +63,13 @@ export default function App() {
   const [scatterTooltipPos, setScatterTooltipPos] = useState({ x: 0, y: 0 }); // tooltip position for scatter plot
   const [hoveredAQIMapState, setHoveredAQIMapState] = useState(null); // hovered state in AQI choropleth map
   const [aqiMapTooltipPos, setAqiMapTooltipPos] = useState({ x: 0, y: 0 }); // tooltip position for AQI map
+  const [aqiMapContainerSize, setAqiMapContainerSize] = useState({ width: 600, height: 684 }); // actual container size
+  const aqiMapContainerRef = useRef(null); // ref for AQI map container
+
+  // Mobile/Tablet/Large screen detection for responsive layouts
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
+  const [isTablet, setIsTablet] = useState(typeof window !== 'undefined' ? window.innerWidth >= 768 && window.innerWidth < 1024 : false);
+  const [isLargeScreen, setIsLargeScreen] = useState(typeof window !== 'undefined' ? window.innerWidth >= 1800 : false);
 
   // Handler for smooth view mode transition
   const handleViewModeChange = (newMode, scrollToIndex = null) => {
@@ -181,6 +190,115 @@ export default function App() {
     // Clear stored positions
     itemPositionsRef.current = {};
   }, [sortOrder]);
+
+  // Effect to calculate timeline scale for responsive design
+  useEffect(() => {
+    const calculateScale = () => {
+      const timelineWidth = 1000;
+      const timelineHeight = 450;
+      const widthPadding = 40; // 20px on each side
+      const heightPadding = 200; // top offset + padding
+      const availableWidth = window.innerWidth - widthPadding;
+      const availableHeight = window.innerHeight - heightPadding;
+      const widthScale = availableWidth / timelineWidth;
+      const heightScale = availableHeight / timelineHeight;
+      // Allow scaling up to 1.4x on large screens (1800px+)
+      const maxScale = window.innerWidth >= 1800 ? 1.4 : 1;
+      const scale = Math.min(maxScale, widthScale, heightScale);
+      setTimelineScale(scale);
+    };
+
+    // Calculate on mount
+    calculateScale();
+
+    // Recalculate on resize
+    window.addEventListener("resize", calculateScale);
+    return () => window.removeEventListener("resize", calculateScale);
+  }, []);
+
+  // Effect to handle mobile/tablet/large screen detection on resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1024);
+      setIsLargeScreen(window.innerWidth >= 1800);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Effect to dismiss tooltips when tapping outside on mobile
+  useEffect(() => {
+    if (!isMobile) return;
+
+    const handleTouchOutside = (e) => {
+      // Don't dismiss if tapping on interactive elements
+      if (e.target.closest('svg line, svg circle, [data-tooltip]')) return;
+      setTooltip(null);
+    };
+
+    document.addEventListener('touchstart', handleTouchOutside);
+    return () => document.removeEventListener('touchstart', handleTouchOutside);
+  }, [isMobile]);
+
+  // Effect to calculate visualization scale for responsive design
+  useEffect(() => {
+    const calculateVizScale = () => {
+      const vizSize = 800; // The circular visualization is 800x800
+      const widthLimit = window.innerWidth * 0.45; // 45% of viewport width
+      // Use percentage-based calculation: header takes ~15vh, bottom padding ~5vh
+      const availableHeight = window.innerHeight * 0.80; // 80% of viewport height
+      const availableSize = Math.min(widthLimit, availableHeight);
+      const scale = Math.min(1, availableSize / vizSize);
+      setVizScale(scale);
+    };
+
+    calculateVizScale();
+    window.addEventListener("resize", calculateVizScale);
+    return () => window.removeEventListener("resize", calculateVizScale);
+  }, []);
+
+  // Effect to track AQI map container size for proper centroid positioning
+  // Using a callback ref pattern for reliable ResizeObserver setup
+  const aqiMapContainerCallbackRef = (node) => {
+    if (node && node !== aqiMapContainerRef.current) {
+      aqiMapContainerRef.current = node;
+      const rect = node.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setAqiMapContainerSize((prev) => {
+          // Only update if size actually changed
+          if (prev.width !== rect.width || prev.height !== rect.height) {
+            return { width: rect.width, height: rect.height };
+          }
+          return prev;
+        });
+      }
+    }
+  };
+
+  useEffect(() => {
+    const updateContainerSize = () => {
+      if (aqiMapContainerRef.current) {
+        const rect = aqiMapContainerRef.current.getBoundingClientRect();
+        setAqiMapContainerSize({ width: rect.width, height: rect.height });
+      }
+    };
+
+    // Set up ResizeObserver
+    let resizeObserver;
+    if (aqiMapContainerRef.current) {
+      resizeObserver = new ResizeObserver(updateContainerSize);
+      resizeObserver.observe(aqiMapContainerRef.current);
+    }
+
+    // Also listen to window resize as fallback
+    window.addEventListener("resize", updateContainerSize);
+
+    return () => {
+      if (resizeObserver) resizeObserver.disconnect();
+      window.removeEventListener("resize", updateContainerSize);
+    };
+  }, []);
 
   // Sources of pollution data
   const pollutionSources = [
@@ -2371,7 +2489,7 @@ export default function App() {
     });
 
     return (
-      <svg width="800" height="800">
+      <svg width="100%" height="100%" viewBox="-50 -50 900 900" preserveAspectRatio="xMidYMid meet" style={{ overflow: "visible" }}>
         <defs>
           <radialGradient id={`centerGlow-${stateInfo.state.replace(/\s+/g, '-')}`}>
             <stop offset="0%" stopColor={centerColor} stopOpacity="0.8" />
@@ -2415,7 +2533,7 @@ export default function App() {
                 strokeDasharray="4,4"
                 opacity="0.4"
                 style={{ cursor: disableTooltips ? "default" : "pointer" }}
-                onMouseEnter={disableTooltips ? undefined : (e) => {
+                onMouseEnter={disableTooltips || isMobile ? undefined : (e) => {
                   setTooltip({
                     x: e.clientX,
                     y: e.clientY,
@@ -2427,12 +2545,29 @@ export default function App() {
                     color: threshold.color,
                   });
                 }}
-                onMouseMove={disableTooltips ? undefined : (e) => {
+                onMouseMove={disableTooltips || isMobile ? undefined : (e) => {
                   if (tooltip) {
                     setTooltip({ ...tooltip, x: e.clientX, y: e.clientY });
                   }
                 }}
-                onMouseLeave={disableTooltips ? undefined : () => setTooltip(null)}
+                onMouseLeave={disableTooltips || isMobile ? undefined : () => setTooltip(null)}
+                onClick={disableTooltips || !isMobile ? undefined : (e) => {
+                  e.stopPropagation();
+                  if (tooltip && tooltip.date === threshold.label) {
+                    setTooltip(null);
+                  } else {
+                    setTooltip({
+                      x: e.clientX,
+                      y: e.clientY,
+                      state: "",
+                      date: threshold.label,
+                      aqiValue: threshold.value,
+                      status: `AQI ${threshold.value}`,
+                      pollutants: "",
+                      color: threshold.color,
+                    });
+                  }
+                }}
               />
             );
           });
@@ -2457,7 +2592,7 @@ export default function App() {
               strokeWidth={dashWidth}
               opacity={1}
               style={{ cursor: disableTooltips ? "default" : "pointer" }}
-              onMouseEnter={disableTooltips ? undefined : (e) => {
+              onMouseEnter={disableTooltips || isMobile ? undefined : (e) => {
                 if (dayInfo.status) {
                   setTooltip({
                     x: e.clientX,
@@ -2471,12 +2606,32 @@ export default function App() {
                   });
                 }
               }}
-              onMouseMove={disableTooltips ? undefined : (e) => {
+              onMouseMove={disableTooltips || isMobile ? undefined : (e) => {
                 if (tooltip) {
                   setTooltip({ ...tooltip, x: e.clientX, y: e.clientY });
                 }
               }}
-              onMouseLeave={disableTooltips ? undefined : () => setTooltip(null)}
+              onMouseLeave={disableTooltips || isMobile ? undefined : () => setTooltip(null)}
+              onClick={disableTooltips || !isMobile ? undefined : (e) => {
+                e.stopPropagation();
+                if (dayInfo.status) {
+                  const dateStr = `${monthNames[dayInfo.month - 1]} ${dayInfo.day}`;
+                  if (tooltip && tooltip.date === dateStr && tooltip.state === (selectedArea || stateInfo.state)) {
+                    setTooltip(null);
+                  } else {
+                    setTooltip({
+                      x: e.clientX,
+                      y: e.clientY,
+                      state: selectedArea || stateInfo.state,
+                      date: dateStr,
+                      aqiValue: dayInfo.aqiValue,
+                      status: dayInfo.status,
+                      pollutants: dayInfo.pollutants,
+                      color: color,
+                    });
+                  }
+                }
+              }}
             />
           );
         })}
@@ -2633,22 +2788,38 @@ export default function App() {
         data-index={index}
         onClick={() => setActiveStateIndex(index)}
         style={{
-          padding: "30px 20px",
-          marginBottom: "400px",
+          padding: isMobile ? "20px 10px" : isLargeScreen ? "40px 30px" : "30px 20px",
+          marginBottom: isMobile ? "40px" : isLargeScreen ? "clamp(250px, 45vh, 500px)" : "clamp(200px, 40vh, 400px)",
           borderRadius: "8px",
           backgroundColor: "transparent",
           cursor: "pointer",
           transition: "all 0.3s ease",
-          opacity: isActive ? 1 : 0.25,
+          opacity: isMobile ? 1 : (isActive ? 1 : 0.25),
         }}
       >
+        {/* Circular visualization for mobile - shown inline with each state */}
+        {isMobile && (
+          <div
+            style={{
+              width: "100%",
+              display: "flex",
+              justifyContent: "center",
+              marginBottom: "20px",
+            }}
+          >
+            <div style={{ width: "min(70vw, 280px)", height: "min(70vw, 280px)" }}>
+              {renderCircularVisualization(stateInfo, true)}
+            </div>
+          </div>
+        )}
         <div
           style={{
             fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-            fontSize: "24px",
+            fontSize: isMobile ? "20px" : isLargeScreen ? "32px" : "24px",
             fontWeight: "700",
             color: isActive ? "#333" : "#666",
-            marginBottom: "5px",
+            marginBottom: isLargeScreen ? "8px" : "5px",
+            textAlign: isMobile ? "center" : "left",
           }}
         >
           {stateInfo.state}
@@ -2657,11 +2828,12 @@ export default function App() {
         <div
           style={{
             fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-            fontSize: "12px",
+            fontSize: isLargeScreen ? "15px" : "12px",
             color: "#999",
-            marginTop: "22px",
-            marginBottom: "10px",
+            marginTop: isLargeScreen ? "28px" : "22px",
+            marginBottom: isLargeScreen ? "14px" : "10px",
             fontStyle: "italic",
+            textAlign: isMobile ? "center" : "left",
           }}
         >
           Click a city bar to view its data
@@ -2671,9 +2843,10 @@ export default function App() {
           display: "flex",
           flexDirection: "column",
           flexWrap: "wrap",
-          gap: "12px",
-          maxHeight: "320px",
-          alignContent: "flex-start",
+          gap: isLargeScreen ? "16px" : "12px",
+          maxHeight: isMobile ? "none" : isLargeScreen ? "400px" : "320px",
+          alignContent: isMobile ? "center" : "flex-start",
+          alignItems: isMobile ? "center" : "flex-start",
         }}>
           {stateInfo.areas.map((area) => {
             const areaMonths = stateInfo.areaData.get(area);
@@ -2708,27 +2881,27 @@ export default function App() {
                 style={{
                   cursor: "pointer",
                   opacity: hasSelection ? (isSelected ? 1 : 0.25) : 0.8,
-                  width: "100px",
-                  marginRight: "20px",
+                  width: isLargeScreen ? "130px" : "100px",
+                  marginRight: isLargeScreen ? "28px" : "20px",
                 }}
               >
                 <div
                   style={{
                     fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                    fontSize: "12px",
+                    fontSize: isLargeScreen ? "14px" : "12px",
                     color: isSelected ? "#333" : "#666",
                     fontWeight: isSelected ? "600" : "400",
-                    marginBottom: "3px",
+                    marginBottom: isLargeScreen ? "4px" : "3px",
                   }}
                 >
                   {area}
                 </div>
                 <div
                   style={{
-                    height: "12px",
-                    width: `${barWidth}px`,
+                    height: isLargeScreen ? "16px" : "12px",
+                    width: `${barWidth * (isLargeScreen ? 1.3 : 1)}px`,
                     backgroundColor: getBarColor(avgAQI),
-                    borderRadius: "2px",
+                    borderRadius: isLargeScreen ? "3px" : "2px",
                     transition: "all 0.2s ease",
                   }}
                   title={`${area}: Avg AQI ${avgAQI.toFixed(0)}`}
@@ -2741,10 +2914,11 @@ export default function App() {
         {selectedAreas[stateInfo.state] && (
           <div
             style={{
-              marginTop: "10px",
-              fontSize: "12px",
+              marginTop: isLargeScreen ? "14px" : "10px",
+              fontSize: isLargeScreen ? "14px" : "12px",
               color: "#060505ff",
               cursor: "pointer",
+              textAlign: isMobile ? "center" : "left",
             }}
             onClick={(e) => {
               e.stopPropagation();
@@ -2906,7 +3080,8 @@ export default function App() {
           {/* Full-page title section */}
           <div
             style={{
-              height: "100vh",
+              minHeight: "100vh",
+              height: "auto",
               position: "relative",
             }}
           >
@@ -2929,14 +3104,14 @@ export default function App() {
               style={{
                 position: "relative",
                 zIndex: 1,
-                padding: "60px 160px",
+                padding: "clamp(40px, 6vh, 60px) clamp(40px, 10vw, 160px)",
                 textAlign: "left",
               }}
             >
               <h1
                 style={{
                   fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                  fontSize: "64px",
+                  fontSize: "clamp(40px, 5vw, 64px)",
                   fontWeight: "900",
                   color: "#000",
                   margin: "0",
@@ -3074,7 +3249,7 @@ export default function App() {
               maxWidth: "800px",
               lineHeight: "2.0",
               textAlign: "left",
-              padding: "140px 40px",
+              padding: "clamp(80px, 12vh, 140px) clamp(20px, 4vw, 40px)",
             }}
           >
             <p>
@@ -3087,65 +3262,302 @@ export default function App() {
           </div>
 
           {/* Delhi & Six Cities Scrollytelling Section */}
-          <div
-            ref={mapScrollRef}
-            style={{
-              display: "flex",
-              minHeight: "200vh",
-              padding: "0 40px",
-              maxWidth: "1400px",
-              margin: "0 auto",
-              marginTop: "50px",
-            }}
-          >
-            {/* Left column - Sticky map that transitions */}
+          {isMobile ? (
+            /* MOBILE LAYOUT: Each map paired with its text */
             <div
               style={{
-                flex: "6",
-                position: "sticky",
-                top: "10vh",
-                height: "80vh",
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "flex-start",
-                marginLeft: "40px",
+                flexDirection: "column",
+                padding: "0 15px",
+                maxWidth: "1400px",
+                margin: "0 auto",
+                marginTop: "50px",
               }}
             >
-              {/* Container for maps with relative positioning */}
+              {/* MOBILE: Delhi Map + Delhi Text */}
+              <div style={{ marginBottom: "40px" }}>
+                {/* Delhi Map */}
+                <div
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    justifyContent: "center",
+                    marginBottom: "20px",
+                  }}
+                >
+                  <div
+                    style={{
+                      position: "relative",
+                      width: "min(80vw, 300px)",
+                      height: "min(80vw, 300px)",
+                    }}
+                  >
+                    <object
+                      data="/india-states.svg"
+                      type="image/svg+xml"
+                      style={{ width: "100%", height: "100%", pointerEvents: "auto" }}
+                      onLoad={(e) => {
+                        const svgDoc = e.target.contentDocument;
+                        if (svgDoc) {
+                          const paths = svgDoc.querySelectorAll("path");
+                          paths.forEach((path) => {
+                            const stateName = path.getAttribute("name");
+                            if (stateName === "Delhi") {
+                              path.style.fill = "#3a9bb2";
+                              path.style.stroke = "#2a7a8a";
+                              path.style.strokeWidth = "1";
+                              path.style.opacity = "1";
+                            } else {
+                              path.style.fill = "#d0d0d0";
+                              path.style.stroke = "#fff";
+                              path.style.strokeWidth = "0.5";
+                              path.style.opacity = "0.7";
+                            }
+                          });
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+                {/* Delhi Text Card */}
+                <div
+                  style={{
+                    maxWidth: "100%",
+                    padding: "clamp(15px, 3vw, 30px)",
+                    backgroundColor: "rgba(255, 255, 255, 0.97)",
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+                    borderLeft: "4px solid #5699af",
+                  }}
+                >
+                  <h2
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "clamp(32px, 5vw, 48px)",
+                      fontWeight: "700",
+                      color: "#3a9bb2",
+                      margin: "0 0 20px 0",
+                      letterSpacing: "2px",
+                      textAlign: "left",
+                    }}
+                  >
+                    DELHI
+                  </h2>
+                  <p
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "16px",
+                      fontWeight: "400",
+                      color: "#333",
+                      lineHeight: "2.0",
+                      margin: "0",
+                      textAlign: "left",
+                    }}
+                  >
+                    had the poorest air quality, in 2024 among capital cities globally, with concentrations of particulate matter (PM2.5) nearly 10 times higher than the World Health Organization guidelines.
+                  </p>
+                  <a
+                    href="https://www.iqair.com/newsroom/5-most-polluted-major-cities-in-world-2024"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "12px",
+                      color: "#5699af",
+                      textDecoration: "none",
+                      marginTop: "10px",
+                      display: "inline-block",
+                    }}
+                  >
+                    Source: IQAir
+                  </a>
+                </div>
+              </div>
+
+              {/* MOBILE: Six Cities Map + Six Cities Text */}
+              <div style={{ marginBottom: "40px" }}>
+                {/* Six Cities Map */}
+                <div
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    justifyContent: "center",
+                    marginBottom: "20px",
+                  }}
+                >
+                  <div
+                    style={{
+                      position: "relative",
+                      width: "min(80vw, 300px)",
+                      height: "min(80vw, 300px)",
+                    }}
+                  >
+                    <object
+                      data="/india-states.svg"
+                      type="image/svg+xml"
+                      style={{ width: "100%", height: "100%", pointerEvents: "none" }}
+                      onLoad={(e) => {
+                        const svgDoc = e.target.contentDocument;
+                        if (svgDoc) {
+                          const paths = svgDoc.querySelectorAll("path");
+                          paths.forEach((path) => {
+                            path.style.fill = "#d0d0d0";
+                            path.style.stroke = "#fff";
+                            path.style.strokeWidth = "0.5";
+                            path.style.opacity = "0.7";
+                          });
+                        }
+                      }}
+                    />
+                    {/* City markers overlay */}
+                    <svg
+                      width="100%"
+                      height="100%"
+                      viewBox="0 0 612 696"
+                      style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none" }}
+                    >
+                      {/* City markers (simplified for mobile - no hover) */}
+                      <circle cx="490" cy="283" r="24" fill="#3a9bb2" opacity="0.3" />
+                      <circle cx="490" cy="283" r="4" fill="#3a9bb2" opacity="1" />
+                      <text x="490" y="253" textAnchor="middle" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333">Byrnihat</text>
+
+                      <circle cx="188" cy="219" r="22" fill="#3a9bb2" opacity="0.3" />
+                      <circle cx="188" cy="219" r="4" fill="#3a9bb2" opacity="1" />
+                      <text x="157" y="207" textAnchor="end" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333">Delhi</text>
+
+                      <circle cx="175" cy="174" r="20" fill="#3a9bb2" opacity="0.3" />
+                      <circle cx="175" cy="174" r="4" fill="#3a9bb2" opacity="1" />
+                      <text x="151" y="162" textAnchor="end" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333">Mullanpur</text>
+
+                      <circle cx="190" cy="224" r="18" fill="#3a9bb2" opacity="0.3" />
+                      <circle cx="190" cy="224" r="4" fill="#3a9bb2" opacity="1" />
+                      <text x="220" y="224" textAnchor="start" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333">Faridabad</text>
+
+                      <circle cx="190" cy="216" r="16" fill="#3a9bb2" opacity="0.3" />
+                      <circle cx="190" cy="216" r="4" fill="#3a9bb2" opacity="1" />
+                      <text x="220" y="206" textAnchor="start" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333">Loni</text>
+
+                      <circle cx="188" cy="219" r="14" fill="#3a9bb2" opacity="0.3" />
+                      <circle cx="188" cy="219" r="4" fill="#3a9bb2" opacity="1" />
+                      <text x="157" y="229" textAnchor="end" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333">New Delhi</text>
+                    </svg>
+                  </div>
+                </div>
+                {/* Six Cities Text Card */}
+                <div
+                  style={{
+                    maxWidth: "100%",
+                    padding: "clamp(15px, 3vw, 30px)",
+                    backgroundColor: "rgba(255, 255, 255, 0.97)",
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+                    borderLeft: "4px solid #5699af",
+                  }}
+                >
+                  <h2
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "clamp(48px, 6vw, 72px)",
+                      fontWeight: "700",
+                      margin: "0 0 20px 0",
+                      textAlign: "left",
+                      lineHeight: "1.1",
+                    }}
+                  >
+                    <span style={{ color: "#3a9bb2" }}>6</span>
+                    <span style={{ color: "#444" }}> out of 10</span>
+                  </h2>
+                  <p
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "16px",
+                      fontWeight: "400",
+                      color: "#555",
+                      lineHeight: "2.0",
+                      margin: "0",
+                      textAlign: "left",
+                    }}
+                  >
+                    most polluted cities of 2024 in the world are in India.
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "12px",
+                      fontWeight: "400",
+                      color: "#888",
+                      lineHeight: "1.5",
+                      margin: "20px 0 0 0",
+                      textAlign: "left",
+                    }}
+                  >
+                    Source: <a href="https://www.iqair.com/world-most-polluted-cities" target="_blank" rel="noopener noreferrer" style={{ color: "#5699af" }}>IQAir - World Most Polluted Cities</a>
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* DESKTOP LAYOUT: Original sticky map with scrolling text */
+            <div
+              ref={mapScrollRef}
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                flexWrap: "wrap",
+                minHeight: "200vh",
+                padding: "0 clamp(20px, 3vw, 40px)",
+                maxWidth: isLargeScreen ? "1800px" : "1400px",
+                margin: "0 auto",
+                marginTop: isLargeScreen ? "80px" : "50px",
+                position: "relative",
+              }}
+            >
+              {/* Left column - Sticky map that transitions */}
               <div
                 style={{
-                  position: "relative",
-                  width: "100%",
-                  maxWidth: "700px",
-                  height: "700px",
-                }}
-              >
-              {/* Delhi map - India base map with Delhi highlighted */}
-              <div
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  maxWidth: "700px",
-                  height: "700px",
+                  flex: isLargeScreen ? "1 1 650px" : "1 1 500px",
+                  minWidth: isLargeScreen ? "min(650px, 100%)" : "min(500px, 100%)",
+                  position: "sticky",
+                  top: "10vh",
+                  height: "80vh",
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                  opacity: activeMapIndex === 0 ? 1 : 0,
-                  visibility: activeMapIndex === 0 ? "visible" : "hidden",
-                  transition: "opacity 0.4s ease, visibility 0.4s ease",
-                  pointerEvents: activeMapIndex === 0 ? "auto" : "none",
+                  justifyContent: "flex-start",
+                  marginLeft: isLargeScreen ? "clamp(20px, 5vw, 80px)" : "clamp(10px, 3vw, 40px)",
                 }}
               >
+                {/* Container for maps with relative positioning */}
+                <div
+                  style={{
+                    position: "relative",
+                    width: "100%",
+                    maxWidth: isLargeScreen ? "min(900px, 55vw)" : "min(700px, 50vw)",
+                    height: isLargeScreen ? "min(900px, 55vw)" : "min(700px, 50vw)",
+                  }}
+                >
+                {/* Delhi map - India base map with Delhi highlighted */}
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity: activeMapIndex === 0 ? 1 : 0,
+                    visibility: activeMapIndex === 0 ? "visible" : "hidden",
+                    transition: "opacity 0.4s ease, visibility 0.4s ease",
+                    pointerEvents: activeMapIndex === 0 ? "auto" : "none",
+                  }}
+                >
                 {/* Base India map with Delhi highlighted */}
                 <object
                   ref={delhiMapRef}
                   data="/india-states.svg"
                   type="image/svg+xml"
-                  width="700"
-                  height="700"
-                  style={{ pointerEvents: "auto" }}
+                  style={{ width: "100%", height: "100%", pointerEvents: "auto" }}
                   onLoad={() => {
                     if (delhiMapRef.current) {
                       const svgDoc = delhiMapRef.current.contentDocument;
@@ -3268,8 +3680,7 @@ export default function App() {
                   top: 0,
                   left: 0,
                   width: "100%",
-                  maxWidth: "700px",
-                  height: "700px",
+                  height: "100%",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -3284,9 +3695,7 @@ export default function App() {
                   ref={sixCitiesMapRef}
                   data="/india-states.svg"
                   type="image/svg+xml"
-                  width="700"
-                  height="700"
-                  style={{ pointerEvents: "none" }}
+                  style={{ width: "100%", height: "100%", pointerEvents: "none" }}
                   onLoad={() => {
                     if (sixCitiesMapRef.current) {
                       const svgDoc = sixCitiesMapRef.current.contentDocument;
@@ -3305,13 +3714,13 @@ export default function App() {
 
                 {/* City markers overlay */}
                 <svg
-                  width="700"
-                  height="700"
-                  viewBox="0 0 600 700"
+                  width="100%"
+                  height="100%"
+                  viewBox="0 0 612 696"
                   style={{ position: "absolute", pointerEvents: "auto" }}
                 >
                   {/* 6 Indian Cities from Top 10 Most Polluted Cities in the World */}
-                  {/* Coordinates calculated using: x = ((lon-68)/30)*600, y = ((37-lat)/31)*700 */}
+                  {/* Coordinates calculated using: x = ((lon-68)/30)*612, y = ((37-lat)/31)*696 */}
 
                   {/* Byrnihat, Assam (lat: 26.04, lon: 91.82) - Near Guwahati, Assam-Meghalaya border */}
                   <g
@@ -3320,10 +3729,10 @@ export default function App() {
                     onMouseMove={(e) => setCityTooltipPos({ x: e.clientX, y: e.clientY })}
                     onMouseLeave={() => setHoveredCity(null)}
                   >
-                    <circle cx="480" cy="285" r="24" fill="#3a9bb2" opacity={hoveredCity === "Byrnihat" ? 0.5 : 0.3} style={{ transition: "opacity 0.2s" }} />
-                    <circle cx="480" cy="285" r="4" fill="#3a9bb2" opacity="1" />
+                    <circle cx="490" cy="283" r="24" fill="#3a9bb2" opacity={hoveredCity === "Byrnihat" ? 0.5 : 0.3} style={{ transition: "opacity 0.2s" }} />
+                    <circle cx="490" cy="283" r="4" fill="#3a9bb2" opacity="1" />
                   </g>
-                  <text x="480" y="255" textAnchor="middle" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>Byrnihat</text>
+                  <text x="490" y="253" textAnchor="middle" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>Byrnihat</text>
 
                   {/* Delhi (lat: 28.61, lon: 77.21) */}
                   <g
@@ -3332,10 +3741,10 @@ export default function App() {
                     onMouseMove={(e) => setCityTooltipPos({ x: e.clientX, y: e.clientY })}
                     onMouseLeave={() => setHoveredCity(null)}
                   >
-                    <circle cx="184" cy="220" r="22" fill="#3a9bb2" opacity={hoveredCity === "Delhi" ? 0.5 : 0.3} style={{ transition: "opacity 0.2s" }} />
-                    <circle cx="184" cy="220" r="4" fill="#3a9bb2" opacity="1" />
+                    <circle cx="188" cy="219" r="22" fill="#3a9bb2" opacity={hoveredCity === "Delhi" ? 0.5 : 0.3} style={{ transition: "opacity 0.2s" }} />
+                    <circle cx="188" cy="219" r="4" fill="#3a9bb2" opacity="1" />
                   </g>
-                  <text x="154" y="208" textAnchor="end" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>Delhi</text>
+                  <text x="157" y="207" textAnchor="end" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>Delhi</text>
 
                   {/* Mullanpur, Punjab (lat: 30.79, lon: 76.61) - Near Chandigarh */}
                   <g
@@ -3344,10 +3753,10 @@ export default function App() {
                     onMouseMove={(e) => setCityTooltipPos({ x: e.clientX, y: e.clientY })}
                     onMouseLeave={() => setHoveredCity(null)}
                   >
-                    <circle cx="172" cy="175" r="20" fill="#3a9bb2" opacity={hoveredCity === "Mullanpur" ? 0.5 : 0.3} style={{ transition: "opacity 0.2s" }} />
-                    <circle cx="172" cy="175" r="4" fill="#3a9bb2" opacity="1" />
+                    <circle cx="175" cy="174" r="20" fill="#3a9bb2" opacity={hoveredCity === "Mullanpur" ? 0.5 : 0.3} style={{ transition: "opacity 0.2s" }} />
+                    <circle cx="175" cy="174" r="4" fill="#3a9bb2" opacity="1" />
                   </g>
-                  <text x="148" y="163" textAnchor="end" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>Mullanpur</text>
+                  <text x="151" y="162" textAnchor="end" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>Mullanpur</text>
 
                   {/* Faridabad, Haryana (lat: 28.4, lon: 77.3) - South of Delhi */}
                   <g
@@ -3356,10 +3765,10 @@ export default function App() {
                     onMouseMove={(e) => setCityTooltipPos({ x: e.clientX, y: e.clientY })}
                     onMouseLeave={() => setHoveredCity(null)}
                   >
-                    <circle cx="186" cy="225" r="18" fill="#3a9bb2" opacity={hoveredCity === "Faridabad" ? 0.5 : 0.3} style={{ transition: "opacity 0.2s" }} />
-                    <circle cx="186" cy="225" r="4" fill="#3a9bb2" opacity="1" />
+                    <circle cx="190" cy="224" r="18" fill="#3a9bb2" opacity={hoveredCity === "Faridabad" ? 0.5 : 0.3} style={{ transition: "opacity 0.2s" }} />
+                    <circle cx="190" cy="224" r="4" fill="#3a9bb2" opacity="1" />
                   </g>
-                  <text x="216" y="225" textAnchor="start" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>Faridabad</text>
+                  <text x="220" y="224" textAnchor="start" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>Faridabad</text>
 
                   {/* Loni, UP (lat: 28.75, lon: 77.28) - East of Delhi */}
                   <g
@@ -3368,10 +3777,10 @@ export default function App() {
                     onMouseMove={(e) => setCityTooltipPos({ x: e.clientX, y: e.clientY })}
                     onMouseLeave={() => setHoveredCity(null)}
                   >
-                    <circle cx="186" cy="217" r="16" fill="#3a9bb2" opacity={hoveredCity === "Loni" ? 0.5 : 0.3} style={{ transition: "opacity 0.2s" }} />
-                    <circle cx="186" cy="217" r="4" fill="#3a9bb2" opacity="1" />
+                    <circle cx="190" cy="216" r="16" fill="#3a9bb2" opacity={hoveredCity === "Loni" ? 0.5 : 0.3} style={{ transition: "opacity 0.2s" }} />
+                    <circle cx="190" cy="216" r="4" fill="#3a9bb2" opacity="1" />
                   </g>
-                  <text x="216" y="207" textAnchor="start" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>Loni</text>
+                  <text x="220" y="206" textAnchor="start" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>Loni</text>
 
                   {/* New Delhi (lat: 28.61, lon: 77.21) */}
                   <g
@@ -3380,10 +3789,10 @@ export default function App() {
                     onMouseMove={(e) => setCityTooltipPos({ x: e.clientX, y: e.clientY })}
                     onMouseLeave={() => setHoveredCity(null)}
                   >
-                    <circle cx="184" cy="220" r="14" fill="#3a9bb2" opacity={hoveredCity === "New Delhi" ? 0.5 : 0.3} style={{ transition: "opacity 0.2s" }} />
-                    <circle cx="184" cy="220" r="4" fill="#3a9bb2" opacity="1" />
+                    <circle cx="188" cy="219" r="14" fill="#3a9bb2" opacity={hoveredCity === "New Delhi" ? 0.5 : 0.3} style={{ transition: "opacity 0.2s" }} />
+                    <circle cx="188" cy="219" r="4" fill="#3a9bb2" opacity="1" />
                   </g>
-                  <text x="154" y="230" textAnchor="end" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>New Delhi</text>
+                  <text x="157" y="229" textAnchor="end" fontSize="10" fontFamily="Avenir, sans-serif" fill="#333" style={{ pointerEvents: "none" }}>New Delhi</text>
                 </svg>
 
                 {/* Tooltip showing all 10 most polluted cities */}
@@ -3474,7 +3883,8 @@ export default function App() {
             {/* Right column - Scrollable text sections */}
             <div
               style={{
-                flex: "4",
+                flex: isLargeScreen ? "1 1 450px" : "1 1 350px",
+                minWidth: isLargeScreen ? "min(450px, 100%)" : "min(350px, 100%)",
                 display: "flex",
                 flexDirection: "column",
                 paddingLeft: "0px",
@@ -3494,25 +3904,27 @@ export default function App() {
                   opacity: activeMapIndex === 0 ? 1 : 0.3,
                   transition: "opacity 0.4s ease-out",
                   paddingLeft: "20px",
+                  paddingRight: "0",
                 }}
               >
                 <div
                   style={{
-                    maxWidth: "450px",
-                    padding: "30px",
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                    maxWidth: isLargeScreen ? "min(550px, 100%)" : "min(450px, 100%)",
+                    padding: isLargeScreen ? "clamp(20px, 4vw, 45px)" : "clamp(15px, 3vw, 30px)",
+                    backgroundColor: "rgba(255, 255, 255, 0.97)",
                     borderRadius: "8px",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                    borderLeft: "4px solid #5699af",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+                    borderLeft: isLargeScreen ? "5px solid #5699af" : "4px solid #5699af",
+                    pointerEvents: "auto",
                   }}
                 >
                   <h2
                     style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "48px",
+                      fontSize: isLargeScreen ? "clamp(40px, 5vw, 60px)" : "clamp(32px, 5vw, 48px)",
                       fontWeight: "700",
                       color: "#3a9bb2",
-                      margin: "0 0 20px 0",
+                      margin: isLargeScreen ? "0 0 28px 0" : "0 0 20px 0",
                       letterSpacing: "2px",
                       textAlign: "left",
                     }}
@@ -3522,7 +3934,7 @@ export default function App() {
                   <p
                     style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "16px",
+                      fontSize: isLargeScreen ? "20px" : "16px",
                       fontWeight: "400",
                       color: "#333",
                       lineHeight: "2.0",
@@ -3538,10 +3950,10 @@ export default function App() {
                     rel="noopener noreferrer"
                     style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "12px",
+                      fontSize: isLargeScreen ? "14px" : "12px",
                       color: "#5699af",
                       textDecoration: "none",
-                      marginTop: "10px",
+                      marginTop: isLargeScreen ? "15px" : "10px",
                       display: "inline-block",
                     }}
                   >
@@ -3563,25 +3975,27 @@ export default function App() {
                   paddingBottom: "20vh",
                   opacity: activeMapIndex === 1 ? 1 : 0.3,
                   transition: "opacity 0.4s ease-out",
-                  paddingLeft: "20px",
+                  paddingLeft: isLargeScreen ? "30px" : "20px",
+                  paddingRight: "0",
                 }}
               >
                 <div
                   style={{
-                    maxWidth: "450px",
-                    padding: "30px",
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                    maxWidth: isLargeScreen ? "min(550px, 100%)" : "min(450px, 100%)",
+                    padding: isLargeScreen ? "clamp(20px, 4vw, 45px)" : "clamp(15px, 3vw, 30px)",
+                    backgroundColor: "rgba(255, 255, 255, 0.97)",
                     borderRadius: "8px",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                    borderLeft: "4px solid #5699af",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+                    borderLeft: isLargeScreen ? "5px solid #5699af" : "4px solid #5699af",
+                    pointerEvents: "auto",
                   }}
                 >
                   <h2
                     style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "72px",
+                      fontSize: isLargeScreen ? "clamp(56px, 7vw, 88px)" : "clamp(48px, 6vw, 72px)",
                       fontWeight: "700",
-                      margin: "0 0 20px 0",
+                      margin: isLargeScreen ? "0 0 28px 0" : "0 0 20px 0",
                       textAlign: "left",
                       lineHeight: "1.1",
                     }}
@@ -3592,7 +4006,7 @@ export default function App() {
                   <p
                     style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "16px",
+                      fontSize: isLargeScreen ? "20px" : "16px",
                       fontWeight: "400",
                       color: "#555",
                       lineHeight: "2.0",
@@ -3620,28 +4034,32 @@ export default function App() {
 
             </div>
           </div>
+          )}
 
           {/* KPI Sections - 3 columns */}
           <div
             style={{
               display: "flex",
               flexDirection: "row",
+              flexWrap: "wrap",
               justifyContent: "center",
               alignItems: "flex-start",
-              padding: "20px 40px",
-              gap: "60px",
+              padding: "20px clamp(20px, 3vw, 40px)",
+              gap: "clamp(30px, 4vw, 60px)",
               maxWidth: "1400px",
               margin: "0 auto",
-              marginTop: "120px",
+              marginTop: "clamp(60px, 10vw, 120px)",
             }}
           >
             {/* KPI 1 - 35% */}
             <div
               style={{
-                flex: "1",
+                flex: isMobile ? "1 1 100%" : "1 1 280px",
+                minWidth: isMobile ? "auto" : "280px",
+                width: isMobile ? "100%" : undefined,
                 display: "flex",
                 flexDirection: "column",
-                alignItems: "flex-start",
+                alignItems: isMobile ? "center" : "flex-start",
                 position: "relative",
                 minHeight: "280px",
               }}
@@ -3653,7 +4071,8 @@ export default function App() {
                 style={{
                   position: "absolute",
                   top: "0",
-                  left: "40px",
+                  left: isMobile ? "50%" : "40px",
+                  transform: isMobile ? "translateX(-50%)" : undefined,
                   width: "280px",
                   zIndex: 0,
                   opacity: 0.9,
@@ -3670,8 +4089,9 @@ export default function App() {
                   lineHeight: "1",
                   position: "relative",
                   zIndex: 1,
-                  marginLeft: "140px",
+                  marginLeft: isMobile ? "0" : "140px",
                   marginTop: "60px",
+                  textAlign: isMobile ? "center" : undefined,
                 }}
               >
                 35%
@@ -3681,7 +4101,7 @@ export default function App() {
                   display: "flex",
                   alignItems: "stretch",
                   marginTop: "20px",
-                  marginLeft: "140px",
+                  marginLeft: isMobile ? "0" : "140px",
                   position: "relative",
                   zIndex: 1,
                 }}
@@ -3715,10 +4135,12 @@ export default function App() {
             {/* KPI 2 - 5.2 years */}
             <div
               style={{
-                flex: "1",
+                flex: isMobile ? "1 1 100%" : "1 1 280px",
+                minWidth: isMobile ? "auto" : "280px",
+                width: isMobile ? "100%" : undefined,
                 display: "flex",
                 flexDirection: "column",
-                alignItems: "flex-start",
+                alignItems: isMobile ? "center" : "flex-start",
                 position: "relative",
                 minHeight: "280px",
               }}
@@ -3730,7 +4152,8 @@ export default function App() {
                 style={{
                   position: "absolute",
                   top: "0",
-                  left: "40px",
+                  left: isMobile ? "50%" : "40px",
+                  transform: isMobile ? "translateX(-50%)" : undefined,
                   width: "280px",
                   zIndex: 0,
                   opacity: 0.9,
@@ -3747,8 +4170,9 @@ export default function App() {
                   lineHeight: "1",
                   position: "relative",
                   zIndex: 1,
-                  marginLeft: "140px",
+                  marginLeft: isMobile ? "0" : "140px",
                   marginTop: "60px",
+                  textAlign: isMobile ? "center" : undefined,
                 }}
               >
                 5.2
@@ -3758,7 +4182,7 @@ export default function App() {
                   display: "flex",
                   alignItems: "stretch",
                   marginTop: "20px",
-                  marginLeft: "140px",
+                  marginLeft: isMobile ? "0" : "140px",
                   position: "relative",
                   zIndex: 1,
                 }}
@@ -3792,10 +4216,12 @@ export default function App() {
             {/* KPI 3 - 2 million */}
             <div
               style={{
-                flex: "1",
+                flex: isMobile ? "1 1 100%" : "1 1 280px",
+                minWidth: isMobile ? "auto" : "280px",
+                width: isMobile ? "100%" : undefined,
                 display: "flex",
                 flexDirection: "column",
-                alignItems: "flex-start",
+                alignItems: isMobile ? "center" : "flex-start",
                 position: "relative",
                 minHeight: "280px",
               }}
@@ -3807,7 +4233,8 @@ export default function App() {
                 style={{
                   position: "absolute",
                   top: "0",
-                  left: "40px",
+                  left: isMobile ? "50%" : "40px",
+                  transform: isMobile ? "translateX(-50%)" : undefined,
                   width: "280px",
                   zIndex: 0,
                   opacity: 0.9,
@@ -3824,8 +4251,9 @@ export default function App() {
                   lineHeight: "1",
                   position: "relative",
                   zIndex: 1,
-                  marginLeft: "140px",
+                  marginLeft: isMobile ? "0" : "140px",
                   marginTop: "60px",
+                  textAlign: isMobile ? "center" : undefined,
                 }}
               >
                 2M
@@ -3835,7 +4263,7 @@ export default function App() {
                   display: "flex",
                   alignItems: "stretch",
                   marginTop: "20px",
-                  marginLeft: "140px",
+                  marginLeft: isMobile ? "0" : "140px",
                   position: "relative",
                   zIndex: 1,
                 }}
@@ -3908,6 +4336,7 @@ export default function App() {
                 width: "2px",
                 backgroundColor: "#5699af",
                 transform: "translateX(-50%)",
+                display: isMobile ? "none" : "block",
               }}
             />
 
@@ -3915,11 +4344,12 @@ export default function App() {
             <div
               style={{
                 display: "flex",
-                alignItems: "flex-start",
-                marginBottom: "120px",
+                flexDirection: isMobile ? "column" : "row",
+                alignItems: isMobile ? "center" : "flex-start",
+                marginBottom: "clamp(60px, 10vh, 120px)",
               }}
             >
-              <div style={{ flex: 1, paddingRight: "40px", display: "flex", justifyContent: "flex-end" }}>
+              <div style={{ flex: isMobile ? "none" : 1, width: isMobile ? "100%" : undefined, paddingRight: isMobile ? "0" : "40px", paddingBottom: isMobile ? "20px" : "0", display: "flex", justifyContent: isMobile ? "center" : "flex-end" }}>
                 <div
                   style={{ position: "relative", maxWidth: "450px", width: "100%" }}
                   onMouseEnter={(e) => e.currentTarget.querySelector('.source-link').style.opacity = 1}
@@ -3950,7 +4380,7 @@ export default function App() {
                       fontSize: "11px",
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       textDecoration: "none",
-                      opacity: 0,
+                      opacity: isMobile ? 0.8 : 0,
                       transition: "opacity 0.3s ease",
                     }}
                   >
@@ -3967,9 +4397,10 @@ export default function App() {
                   borderRadius: "50%",
                   flexShrink: 0,
                   zIndex: 10,
+                  display: isMobile ? "none" : "block",
                 }}
               />
-              <div style={{ flex: 1, paddingLeft: "40px" }}>
+              <div style={{ flex: 1, paddingLeft: isMobile ? "0" : "40px", paddingTop: isMobile ? "20px" : "0" }}>
                 <p
                   style={{
                     fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
@@ -3978,7 +4409,7 @@ export default function App() {
                     lineHeight: "2.0",
                     maxWidth: "400px",
                     margin: 0,
-                    textAlign: "left",
+                    textAlign: isMobile ? "center" : "left",
                   }}
                 >
                   Heavy smog seen engulfed amid rise in pollution levels at Barakhamba on Nov. 2, 2023 in New Delhi, India. Authorities in the Indian capital, have shut all primary schools for two days amid worsening levels of air pollution. As part of the third phase of its Graded Response Action Plan to combat effects of increased pollution, a central pollution control panel ordered an immediate ban on non-essential construction work in the city.
@@ -3990,11 +4421,12 @@ export default function App() {
             <div
               style={{
                 display: "flex",
-                alignItems: "flex-start",
-                marginBottom: "120px",
+                flexDirection: isMobile ? "column-reverse" : "row",
+                alignItems: isMobile ? "center" : "flex-start",
+                marginBottom: "clamp(60px, 10vh, 120px)",
               }}
             >
-              <div style={{ flex: 1, paddingRight: "40px", display: "flex", justifyContent: "flex-end" }}>
+              <div style={{ flex: 1, paddingRight: isMobile ? "0" : "40px", paddingTop: isMobile ? "20px" : "0", display: "flex", justifyContent: isMobile ? "center" : "flex-end" }}>
                 <p
                   style={{
                     fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
@@ -4003,10 +4435,10 @@ export default function App() {
                     lineHeight: "2.0",
                     maxWidth: "400px",
                     margin: 0,
-                    textAlign: "right",
+                    textAlign: isMobile ? "center" : "right",
                   }}
                 >
-                  On November 8, 2017, Indian schoolchildren covered their faces as they walked to school through thick smog in New Delhi. Air pollution had reached hazardous levels, forcing authorities to temporarily shut down the education system until the following week. The decision came just a day after doctors declared a “public health emergency” in what was then described as the world’s most polluted city.
+                  On November 8, 2017, Indian schoolchildren covered their faces as they walked to school through thick smog in New Delhi. Air pollution had reached hazardous levels, forcing authorities to temporarily shut down the education system until the following week. The decision came just a day after doctors declared a "public health emergency" in what was then described as the world's most polluted city.
                      </p>
               </div>
               {/* Dot on timeline */}
@@ -4018,9 +4450,10 @@ export default function App() {
                   borderRadius: "50%",
                   flexShrink: 0,
                   zIndex: 10,
+                  display: isMobile ? "none" : "block",
                 }}
               />
-              <div style={{ flex: 1, paddingLeft: "40px" }}>
+              <div style={{ flex: 1, paddingLeft: isMobile ? "0" : "40px", paddingBottom: isMobile ? "20px" : "0" }}>
                 <div
                   style={{ position: "relative", maxWidth: "450px", width: "100%" }}
                   onMouseEnter={(e) => e.currentTarget.querySelector('.source-link').style.opacity = 1}
@@ -4051,7 +4484,7 @@ export default function App() {
                       fontSize: "11px",
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       textDecoration: "none",
-                      opacity: 0,
+                      opacity: isMobile ? 0.8 : 0,
                       transition: "opacity 0.3s ease",
                     }}
                   >
@@ -4065,11 +4498,12 @@ export default function App() {
             <div
               style={{
                 display: "flex",
-                alignItems: "flex-start",
-                marginBottom: "120px",
+                flexDirection: isMobile ? "column" : "row",
+                alignItems: isMobile ? "center" : "flex-start",
+                marginBottom: "clamp(60px, 10vh, 120px)",
               }}
             >
-              <div style={{ flex: 1, paddingRight: "40px", display: "flex", justifyContent: "flex-end" }}>
+              <div style={{ flex: 1, paddingRight: isMobile ? "0" : "40px", paddingBottom: isMobile ? "20px" : "0", display: "flex", justifyContent: isMobile ? "center" : "flex-end" }}>
                 <div
                   style={{ position: "relative", maxWidth: "450px", width: "100%" }}
                   onMouseEnter={(e) => e.currentTarget.querySelector('.source-link').style.opacity = 1}
@@ -4100,7 +4534,7 @@ export default function App() {
                       fontSize: "11px",
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       textDecoration: "none",
-                      opacity: 0,
+                      opacity: isMobile ? 0.8 : 0,
                       transition: "opacity 0.3s ease",
                     }}
                   >
@@ -4117,9 +4551,10 @@ export default function App() {
                   borderRadius: "50%",
                   flexShrink: 0,
                   zIndex: 10,
+                  display: isMobile ? "none" : "block",
                 }}
               />
-              <div style={{ flex: 1, paddingLeft: "40px" }}>
+              <div style={{ flex: 1, paddingLeft: isMobile ? "0" : "40px", paddingTop: isMobile ? "20px" : "0" }}>
                 <p
                   style={{
                     fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
@@ -4128,7 +4563,7 @@ export default function App() {
                     lineHeight: "2.0",
                     maxWidth: "400px",
                     margin: 0,
-                    textAlign: "left",
+                    textAlign: isMobile ? "center" : "left",
                   }}
                 >
                   Smoke rises from burning garbage as a boy searches for recyclable items at a landfill in New Delhi. The burning waste emits toxic pollutants such as dioxins, nitrogen oxides, and particulate matter, posing serious respiratory risks to nearby residents and workers, who often lack adequate protective equipment. These landfill fires significantly worsen local air quality, a problem intensified by high temperatures and inadequate waste management infrastructure.
@@ -4140,11 +4575,12 @@ export default function App() {
             <div
               style={{
                 display: "flex",
-                alignItems: "flex-start",
-                marginBottom: "120px",
+                flexDirection: isMobile ? "column-reverse" : "row",
+                alignItems: isMobile ? "center" : "flex-start",
+                marginBottom: "clamp(60px, 10vh, 120px)",
               }}
             >
-              <div style={{ flex: 1, paddingRight: "40px", display: "flex", justifyContent: "flex-end" }}>
+              <div style={{ flex: 1, paddingRight: isMobile ? "0" : "40px", paddingTop: isMobile ? "20px" : "0", display: "flex", justifyContent: isMobile ? "center" : "flex-end" }}>
                 <p
                   style={{
                     fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
@@ -4153,10 +4589,10 @@ export default function App() {
                     lineHeight: "2.0",
                     maxWidth: "400px",
                     margin: 0,
-                    textAlign: "right",
+                    textAlign: isMobile ? "center" : "right",
                   }}
                 >
-                Burning rice residue (parali) in Sangrur, Punjab, occurs annually in Oct-Nov to quickly and cheaply clear fields for wheat, leaving only 10–15 days for preparation. This practice, covering millions of tons of stubble, causes severe air pollution (PM2.5, CO), health hazards across Northern India, and kills beneficial soil nutrients. 
+                Burning rice residue (parali) in Sangrur, Punjab, occurs annually in Oct-Nov to quickly and cheaply clear fields for wheat, leaving only 10–15 days for preparation. This practice, covering millions of tons of stubble, causes severe air pollution (PM2.5, CO), health hazards across Northern India, and kills beneficial soil nutrients.
                     </p>
               </div>
               {/* Dot on timeline */}
@@ -4168,9 +4604,10 @@ export default function App() {
                   borderRadius: "50%",
                   flexShrink: 0,
                   zIndex: 10,
+                  display: isMobile ? "none" : "block",
                 }}
               />
-              <div style={{ flex: 1, paddingLeft: "40px" }}>
+              <div style={{ flex: 1, paddingLeft: isMobile ? "0" : "40px", paddingBottom: isMobile ? "20px" : "0" }}>
                 <div
                   style={{ position: "relative", maxWidth: "450px", width: "100%" }}
                   onMouseEnter={(e) => e.currentTarget.querySelector('.source-link').style.opacity = 1}
@@ -4201,7 +4638,7 @@ export default function App() {
                       fontSize: "11px",
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       textDecoration: "none",
-                      opacity: 0,
+                      opacity: isMobile ? 0.8 : 0,
                       transition: "opacity 0.3s ease",
                     }}
                   >
@@ -4215,11 +4652,12 @@ export default function App() {
             <div
               style={{
                 display: "flex",
-                alignItems: "flex-start",
-                marginBottom: "120px",
+                flexDirection: isMobile ? "column" : "row",
+                alignItems: isMobile ? "center" : "flex-start",
+                marginBottom: "clamp(60px, 10vh, 120px)",
               }}
             >
-              <div style={{ flex: 1, paddingRight: "40px", display: "flex", justifyContent: "flex-end" }}>
+              <div style={{ flex: 1, paddingRight: isMobile ? "0" : "40px", paddingBottom: isMobile ? "20px" : "0", display: "flex", justifyContent: isMobile ? "center" : "flex-end" }}>
                 <div
                   style={{ position: "relative", maxWidth: "450px", width: "100%" }}
                   onMouseEnter={(e) => e.currentTarget.querySelector('.source-link').style.opacity = 1}
@@ -4250,7 +4688,7 @@ export default function App() {
                       fontSize: "11px",
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       textDecoration: "none",
-                      opacity: 0,
+                      opacity: isMobile ? 0.8 : 0,
                       transition: "opacity 0.3s ease",
                     }}
                   >
@@ -4267,9 +4705,10 @@ export default function App() {
                   borderRadius: "50%",
                   flexShrink: 0,
                   zIndex: 10,
+                  display: isMobile ? "none" : "block",
                 }}
               />
-              <div style={{ flex: 1, paddingLeft: "40px" }}>
+              <div style={{ flex: 1, paddingLeft: isMobile ? "0" : "40px", paddingTop: isMobile ? "20px" : "0" }}>
                 <p
                   style={{
                     fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
@@ -4278,7 +4717,7 @@ export default function App() {
                     lineHeight: "2.0",
                     maxWidth: "400px",
                     margin: 0,
-                    textAlign: "left",
+                    textAlign: isMobile ? "center" : "left",
                   }}
                 >
                 Over the past three decades, Byrnihat has transformed from a small settlement into a major industrial hub. This town of roughly 50,000 residents hosts around 80 industries, many centered on iron and steel production. Its winding roads are crowded with long lines of trucks  some idling, others transporting materials to and from factories. Today, it carries the unwanted distinction of being ranked the world's most polluted city by a Swiss air quality monitoring agency.   </p>
@@ -4289,11 +4728,12 @@ export default function App() {
             <div
               style={{
                 display: "flex",
-                alignItems: "flex-start",
-                marginBottom: "120px",
+                flexDirection: isMobile ? "column-reverse" : "row",
+                alignItems: isMobile ? "center" : "flex-start",
+                marginBottom: "clamp(60px, 10vh, 120px)",
               }}
             >
-              <div style={{ flex: 1, paddingRight: "40px", display: "flex", justifyContent: "flex-end" }}>
+              <div style={{ flex: 1, paddingRight: isMobile ? "0" : "40px", paddingTop: isMobile ? "20px" : "0", display: "flex", justifyContent: isMobile ? "center" : "flex-end" }}>
                 <p
                   style={{
                     fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
@@ -4302,7 +4742,7 @@ export default function App() {
                     lineHeight: "2.0",
                     maxWidth: "400px",
                     margin: 0,
-                    textAlign: "right",
+                    textAlign: isMobile ? "center" : "right",
                   }}
                 >
                  Diwali is one of India's most widely celebrated festivals, yet it is also a time when air pollution levels rise sharply due to the widespread use of firecrackers. During these days, the air becomes visibly hazy and physically difficult to breathe. Despite increasing awareness about the environmental impact, large-scale adoption of a truly "green Diwali" remains limited. In 2024, Delhi alone recorded AQI levels as high as 550 during Diwali falling into the severe to hazardous category highlighting the urgent need for more sustainable ways to celebrate.
@@ -4317,9 +4757,10 @@ export default function App() {
                   borderRadius: "50%",
                   flexShrink: 0,
                   zIndex: 10,
+                  display: isMobile ? "none" : "block",
                 }}
               />
-              <div style={{ flex: 1, paddingLeft: "40px" }}>
+              <div style={{ flex: 1, paddingLeft: isMobile ? "0" : "40px", paddingBottom: isMobile ? "20px" : "0" }}>
                 <div
                   style={{ position: "relative", maxWidth: "450px", width: "100%" }}
                   onMouseEnter={(e) => e.currentTarget.querySelector('.source-link').style.opacity = 1}
@@ -4350,7 +4791,7 @@ export default function App() {
                       fontSize: "11px",
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       textDecoration: "none",
-                      opacity: 0,
+                      opacity: isMobile ? 0.8 : 0,
                       transition: "opacity 0.3s ease",
                     }}
                   >
@@ -4364,10 +4805,11 @@ export default function App() {
             <div
               style={{
                 display: "flex",
-                alignItems: "flex-start",
+                flexDirection: isMobile ? "column" : "row",
+                alignItems: isMobile ? "center" : "flex-start",
               }}
             >
-              <div style={{ flex: 1, paddingRight: "40px", display: "flex", justifyContent: "flex-end" }}>
+              <div style={{ flex: 1, paddingRight: isMobile ? "0" : "40px", paddingBottom: isMobile ? "20px" : "0", display: "flex", justifyContent: isMobile ? "center" : "flex-end" }}>
                 <div
                   style={{ position: "relative", maxWidth: "450px", width: "100%" }}
                   onMouseEnter={(e) => e.currentTarget.querySelector('.source-link').style.opacity = 1}
@@ -4398,7 +4840,7 @@ export default function App() {
                       fontSize: "11px",
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       textDecoration: "none",
-                      opacity: 0,
+                      opacity: isMobile ? 0.8 : 0,
                       transition: "opacity 0.3s ease",
                     }}
                   >
@@ -4415,9 +4857,10 @@ export default function App() {
                   borderRadius: "50%",
                   flexShrink: 0,
                   zIndex: 10,
+                  display: isMobile ? "none" : "block",
                 }}
               />
-              <div style={{ flex: 1, paddingLeft: "40px" }}>
+              <div style={{ flex: 1, paddingLeft: isMobile ? "0" : "40px", paddingTop: isMobile ? "20px" : "0" }}>
                 <p
                   style={{
                     fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
@@ -4426,7 +4869,7 @@ export default function App() {
                     lineHeight: "2.0",
                     maxWidth: "400px",
                     margin: 0,
-                    textAlign: "left",
+                    textAlign: isMobile ? "center" : "left",
                   }}
                 >
                  A rural aburo stove using biomass cakes, fuelwood and trash as cooking fuel. Surveys suggest over 100 million households in India use such stoves (चूल्हा) every day, 2–3 times a day. Clean burning fuels and electricity are unavailable in rural parts and small towns of India because of poor rural highways and energy infrastructure.
@@ -4448,21 +4891,21 @@ export default function App() {
           >
             <div
               style={{
-                width: "6px",
-                height: "80px",
+                width: isLargeScreen ? "8px" : "6px",
+                height: isLargeScreen ? "100px" : "80px",
                 backgroundColor: "#5699af",
-                marginRight: "20px",
+                marginRight: isLargeScreen ? "28px" : "20px",
                 flexShrink: 0,
               }}
             />
             <p
               style={{
                 fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                fontSize: "22px",
+                fontSize: isLargeScreen ? "28px" : "22px",
                 fontWeight: "300",
                 color: "#333",
                 textAlign: "left",
-                maxWidth: "720px",
+                maxWidth: isLargeScreen ? "900px" : "720px",
                 lineHeight: "2.0",
                 margin: 0,
                 marginTop: "-10px",
@@ -4476,9 +4919,10 @@ export default function App() {
           <div
             ref={timelineScrollRef}
             style={{
-              height: "380vh", // Tall container for all timeline events
+              height: isMobile ? "auto" : "380vh", // Tall container for all timeline events
               position: "relative",
-              marginTop: "100px",
+              marginTop: "clamp(50px, 8vh, 100px)",
+              overflow: "visible",
             }}
           >
             {/* Sticky timeline container */}
@@ -4486,31 +4930,43 @@ export default function App() {
               ref={timelineRef}
               style={{
                 position: "sticky",
-                top: "100px",
+                top: "clamp(40px, 8vh, 100px)",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                padding: "40px 20px 80px 20px",
+                padding: "clamp(20px, 4vh, 40px) 20px clamp(40px, 6vh, 80px) 20px",
                 minHeight: "auto",
                 backgroundColor: "#fff",
                 zIndex: 10,
+                overflow: "visible",
               }}
             >
-              {/* Serpentine pattern container */}
+              {/* Serpentine pattern container - scales on smaller screens */}
               <div
                 style={{
                   display: "flex",
                   justifyContent: "center",
+                  width: "100%",
+                  overflow: "visible",
+                  height: 450 * timelineScale, // Adjust container height for scaled content
                 }}
               >
-                {/* Serpentine SVG pattern */}
+                {/* Scaling wrapper for timeline */}
                 <div
                   style={{
-                    position: "relative",
-                    width: "1000px",
-                    height: "450px",
+                    transform: `scale(${Math.max(isMobile ? 0.35 : 0.5, timelineScale)})`,
+                    transformOrigin: "top center",
+                    overflow: "visible",
                   }}
                 >
+                  {/* Serpentine SVG pattern - fixed internal dimensions for precise positioning */}
+                  <div
+                    style={{
+                      position: "relative",
+                      width: "1000px",
+                      height: "450px",
+                    }}
+                  >
                 {/* Full serpentine pattern with row-by-row reveal */}
                 <svg
                   width="1020"
@@ -4914,8 +5370,15 @@ export default function App() {
                   // Position popup - to the left for specific years (2009, 2014, 2016, 2019) to avoid blocking animation
                   const popupWidth = yearToShow === 2019 ? 220 : 280;
                   const showOnLeft = yearToShow === 2009 || yearToShow === 2014 || yearToShow === 2016 || yearToShow === 2019;
-                  const popupLeft = showOnLeft ? dotX - popupWidth - 60 : dotX + 60;
-                  const popupTop = dotY - 40;
+                  // Calculate left position, ensuring it doesn't go off-screen (minimum 10px from left edge)
+                  let popupLeft = showOnLeft ? dotX - popupWidth - 60 : dotX + 60;
+                  // Clamp popup to stay within the 1000px container bounds
+                  const minLeft = 10;
+                  const maxLeft = 1000 - popupWidth - 10;
+                  popupLeft = Math.max(minLeft, Math.min(popupLeft, maxLeft));
+                  // For events on rows 4 and 5, position popup higher to avoid being cut off at the bottom
+                  const isLowerRow = event.row >= 4;
+                  const popupTop = isLowerRow ? Math.max(10, dotY - 280) : dotY - 40;
 
                   return (
                     <div
@@ -4924,6 +5387,8 @@ export default function App() {
                         left: `${popupLeft}px`,
                         top: `${popupTop}px`,
                         width: `${popupWidth}px`,
+                        maxHeight: "380px",
+                        overflowY: "auto",
                         backgroundColor: "#fff",
                         border: "2px solid #5699af",
                         borderRadius: "8px",
@@ -4931,7 +5396,7 @@ export default function App() {
                         boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                         opacity: 1,
                         zIndex: 100,
-                        pointerEvents: "none",
+                        pointerEvents: "auto",
                       }}
                     >
                       <div
@@ -4973,8 +5438,11 @@ export default function App() {
               </div>
             </div>
           </div>
-          </div>
-          <div style={{ textAlign: "center", marginTop: "-60px", marginBottom: "40px" }}>
+          {/* Reference - inside sticky container so it stays with timeline */}
+          <div style={{
+            textAlign: "center",
+            marginTop: "clamp(80px, 12vh, 140px)",
+          }}>
             <p
               style={{
                 fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
@@ -4986,6 +5454,8 @@ export default function App() {
               Reference: <a href="https://urbanemissions.info/wp-content/uploads/images/2019-12-NCAP-India_AQ_Timeline.png" target="_blank" rel="noopener noreferrer" style={{ color: "#5699af", textDecoration: "none" }}>Urban Emissions - India AQ Timeline</a>
             </p>
           </div>
+          </div>
+          </div>
 
           {/* Transition text after timeline */}
           <div
@@ -4995,26 +5465,26 @@ export default function App() {
               alignItems: "flex-start",
               minHeight: "30vh",
               padding: "40px 40px",
-              marginTop: "100px",
+              marginTop: "clamp(50px, 8vh, 100px)",
             }}
           >
             <div
               style={{
-                width: "6px",
-                height: "80px",
+                width: isLargeScreen ? "8px" : "6px",
+                height: isLargeScreen ? "100px" : "80px",
                 backgroundColor: "#5699af",
-                marginRight: "20px",
+                marginRight: isLargeScreen ? "28px" : "20px",
                 flexShrink: 0,
               }}
             />
             <p
               style={{
                 fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                fontSize: "22px",
+                fontSize: isLargeScreen ? "28px" : "22px",
                 fontWeight: "300",
                 color: "#333",
                 textAlign: "left",
-                maxWidth: "800px",
+                maxWidth: isLargeScreen ? "1000px" : "800px",
                 lineHeight: "2.0",
                 margin: 0,
                 marginTop: "-10px",
@@ -5028,29 +5498,31 @@ export default function App() {
           <div
             style={{
               display: "flex",
-              flexDirection: "row",
+              flexDirection: isMobile ? "column" : "row",
               position: "relative",
-              minHeight: "200vh",
+              minHeight: isMobile ? "auto" : "200vh",
             }}
           >
-            {/* Left: Sticky Map Visualization */}
+            {/* Left: Sticky Map Visualization (not sticky on mobile) */}
             <div
               style={{
-                width: "55%",
-                position: "sticky",
-                top: 0,
-                height: "100vh",
+                width: isMobile ? "100%" : "55%",
+                position: isMobile ? "relative" : "sticky",
+                top: isMobile ? undefined : 0,
+                height: isMobile ? "auto" : "100vh",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                padding: "20px",
+                padding: isMobile ? "20px 10px" : "20px",
+                marginBottom: isMobile ? "30px" : undefined,
               }}
             >
               <div
+                ref={aqiMapContainerCallbackRef}
                 style={{
                   position: "relative",
-                  width: "600px",
-                  height: "684px",
+                  width: isMobile ? "min(85vw, 350px)" : "min(750px, 55vw, calc(85vh * 612 / 696))",
+                  aspectRatio: "612 / 696",
                   overflow: "visible",
                 }}
               >
@@ -5059,9 +5531,7 @@ export default function App() {
                 ref={standAloneAqiMapRef}
                 data="/india-states.svg"
                 type="image/svg+xml"
-                width="600"
-                height="684"
-                style={{ pointerEvents: "none", position: "absolute", top: 0, left: 0 }}
+                style={{ width: "100%", height: "100%", pointerEvents: "none", position: "absolute", top: 0, left: 0 }}
                 onLoad={() => {
                   if (standAloneAqiMapRef.current) {
                     const svgDoc = standAloneAqiMapRef.current.contentDocument;
@@ -5099,9 +5569,9 @@ export default function App() {
                         stateAQIMap[state.state] = state.avgAQI;
                       });
 
-                      // SVG viewBox is 612x696, rendered at 600x684
-                      const scaleX = 600 / 612;
-                      const scaleY = 684 / 696;
+                      // SVG viewBox is 612x696 - store normalized (0-1) percentages
+                      const svgWidth = 612;
+                      const svgHeight = 696;
 
                       const centroids = {};
                       paths.forEach((path) => {
@@ -5114,12 +5584,12 @@ export default function App() {
                         path.style.stroke = "#fff";
                         path.style.strokeWidth = "0.5";
 
-                        // Compute centroids
+                        // Compute centroids as normalized percentages (0-1)
                         if (name && stateIdToName[id]) {
                           const bbox = path.getBBox();
                           centroids[name] = {
-                            x: (bbox.x + bbox.width / 2) * scaleX,
-                            y: (bbox.y + bbox.height / 2) * scaleY
+                            x: (bbox.x + bbox.width / 2) / svgWidth,
+                            y: (bbox.y + bbox.height / 2) / svgHeight
                           };
                         }
                       });
@@ -5134,16 +5604,22 @@ export default function App() {
                 const pos = mapCentroids[stateInfo.state];
                 if (!pos) return null;
 
-                // Visual size for each circle on the map
-                const visualSize = 90;
+                // Scale visual size based on container size (90px at 600px width)
+                const baseSize = 90;
+                const scaleFactor = aqiMapContainerSize.width / 600;
+                const visualSize = baseSize * scaleFactor;
+
+                // Convert normalized (0-1) position to actual pixel position
+                const actualX = pos.x * aqiMapContainerSize.width;
+                const actualY = pos.y * aqiMapContainerSize.height;
 
                 return (
                   <div
                     key={stateInfo.state}
                     style={{
                       position: "absolute",
-                      left: pos.x - visualSize / 2,
-                      top: pos.y - visualSize / 2,
+                      left: actualX - visualSize / 2,
+                      top: actualY - visualSize / 2,
                       width: visualSize,
                       height: visualSize,
                       pointerEvents: "auto",
@@ -5214,7 +5690,7 @@ export default function App() {
                 style={{
                   position: "absolute",
                   bottom: "-25px",
-                  left: "35%",
+                  left: isMobile ? "50%" : "35%",
                   transform: "translateX(-50%)",
                   fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                   fontSize: "11px",
@@ -5225,46 +5701,49 @@ export default function App() {
                   whiteSpace: "nowrap",
                 }}
               >
-                Hover for more information
+                {isMobile ? "Tap for more information" : "Hover for more information"}
               </p>
               </div>
             </div>
 
-            {/* Right: Scrollable Cards Container */}
+            {/* Right: Scrollable Cards Container (normal flow on mobile) */}
             <div
               style={{
-                flex: 1,
+                flex: isMobile ? "none" : 1,
                 display: "flex",
                 flexDirection: "column",
+                width: isMobile ? "100%" : undefined,
+                padding: isMobile ? "0 15px" : undefined,
               }}
             >
               {/* First Card - Mapping Air Quality Index */}
               <div
                 style={{
-                  minHeight: "100vh",
-                  padding: "60px 40px",
+                  minHeight: isMobile ? "auto" : "100vh",
+                  padding: isMobile ? "20px 0" : "60px 40px",
                   display: "flex",
-                  alignItems: "center",
+                  alignItems: isMobile ? "flex-start" : "center",
+                  justifyContent: "center",
                 }}
               >
                 <div
                   style={{
-                    maxWidth: "450px",
-                    padding: "30px",
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                    maxWidth: isMobile ? "100%" : "450px",
+                    padding: isMobile ? "20px" : isLargeScreen ? "40px" : "30px",
+                    backgroundColor: isMobile ? "#fff" : "rgba(255, 255, 255, 0.97)",
                     borderRadius: "8px",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                    borderLeft: "4px solid #5699af",
+                    boxShadow: isMobile ? "none" : "0 4px 20px rgba(0,0,0,0.15)",
+                    borderLeft: isLargeScreen ? "5px solid #5699af" : "4px solid #5699af",
                   }}
                 >
                   <h2
                     style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "20px",
+                      fontSize: isLargeScreen ? "26px" : "20px",
                       fontWeight: "500",
                       color: "#333",
                       margin: 0,
-                      marginBottom: "15px",
+                      marginBottom: isLargeScreen ? "20px" : "15px",
                       lineHeight: "1.3",
                     }}
                   >
@@ -5273,11 +5752,11 @@ export default function App() {
                   <p
                     style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "15px",
+                      fontSize: isLargeScreen ? "18px" : "15px",
                       color: "#555",
                       lineHeight: "1.8",
-                      marginTop: "15px",
-                      marginBottom: "15px",
+                      marginTop: isLargeScreen ? "20px" : "15px",
+                      marginBottom: isLargeScreen ? "20px" : "15px",
                     }}
                   >
                     The map of India on the left illustrates Air Quality Index (AQI) conditions across 2024. Each circular calendar represents a state or union territory, with radial lines showing daily AQI values throughout the year. Colors indicate pollution severity, blue tones for better air quality and pink tones for poorer conditions.
@@ -5304,30 +5783,31 @@ export default function App() {
               {/* Second Card - AQI Categories & Health Impact */}
               <div
                 style={{
-                  minHeight: "80vh",
-                  padding: "60px 40px",
+                  minHeight: isMobile ? "auto" : "80vh",
+                  padding: isMobile ? "20px 0" : "60px 40px",
                   display: "flex",
-                  alignItems: "center",
+                  alignItems: isMobile ? "flex-start" : "center",
+                  justifyContent: "center",
                 }}
               >
                 <div
                   style={{
-                    maxWidth: "450px",
-                    padding: "30px",
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                    maxWidth: isMobile ? "100%" : isLargeScreen ? "550px" : "450px",
+                    padding: isMobile ? "20px" : isLargeScreen ? "40px" : "30px",
+                    backgroundColor: isMobile ? "#fff" : "rgba(255, 255, 255, 0.97)",
                     borderRadius: "8px",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                    borderLeft: "4px solid #5699af",
+                    boxShadow: isMobile ? "none" : "0 4px 20px rgba(0,0,0,0.15)",
+                    borderLeft: isLargeScreen ? "5px solid #5699af" : "4px solid #5699af",
                   }}
                 >
                   <h4
                     style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "20px",
+                      fontSize: isLargeScreen ? "26px" : "20px",
                       fontWeight: "500",
                       color: "#333",
                       margin: 0,
-                      marginBottom: "20px",
+                      marginBottom: isLargeScreen ? "28px" : "20px",
                     }}
                   >
                     AQI Categories & Health Impact
@@ -5382,28 +5862,28 @@ export default function App() {
               display: "flex",
               justifyContent: "center",
               alignItems: "flex-start",
-              minHeight: "40vh",
-              padding: "60px 20px",
+              minHeight: isMobile ? "auto" : "40vh",
+              padding: isMobile ? "40px 20px" : "60px 20px",
               background: "#fff",
             }}
           >
             <div
               style={{
-                width: "6px",
-                height: "80px",
+                width: isLargeScreen ? "8px" : "6px",
+                height: isLargeScreen ? "100px" : "80px",
                 backgroundColor: "#5699af",
-                marginRight: "20px",
+                marginRight: isLargeScreen ? "28px" : "20px",
                 flexShrink: 0,
               }}
             />
             <p
               style={{
                 fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                fontSize: "22px",
+                fontSize: isLargeScreen ? "28px" : "22px",
                 fontWeight: "300",
                 color: "#333",
                 textAlign: "left",
-                maxWidth: "800px",
+                maxWidth: isLargeScreen ? "1000px" : "800px",
                 lineHeight: "2.0",
                 margin: 0,
                 marginTop: "-10px",
@@ -5417,26 +5897,35 @@ export default function App() {
           <div
             ref={gridSectionRef}
             style={{
-              padding: "0 40px 40px 40px",
+              padding: "0 clamp(15px, 2vw, 30px) clamp(10px, 1.5vh, 20px) clamp(15px, 2vw, 30px)",
               width: "100%",
               boxSizing: "border-box",
+              overflow: "visible",
+              ...(viewMode === "overview" ? {
+                height: isMobile ? "auto" : "100vh",
+                minHeight: isMobile ? "auto" : undefined,
+                display: "flex",
+                flexDirection: "column",
+              } : {}),
             }}
           >
             {/* Header section - sticky in scrollable mode */}
             <div
               style={{
                 display: "flex",
+                flexDirection: isMobile ? "column" : "row",
                 justifyContent: "space-between",
-                alignItems: "flex-start",
-                marginTop: "10px",
-                marginBottom: "0px",
+                alignItems: isMobile ? "stretch" : "flex-start",
+                marginTop: viewMode === "overview" ? "clamp(5px, 1vh, 15px)" : "10px",
+                marginBottom: isMobile ? "15px" : "0px",
+                flexShrink: 0,
                 ...(viewMode === "scrollable" ? {
                   position: "sticky",
                   top: 0,
                   backgroundColor: "#fff",
                   zIndex: 100,
-                  paddingTop: "20px",
-                  paddingBottom: "20px",
+                  paddingTop: "15px",
+                  paddingBottom: "15px",
                   marginTop: "0px",
                 } : {}),
               }}
@@ -5446,21 +5935,21 @@ export default function App() {
                 <h2
                   style={{
                     fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                    fontSize: "28px",
+                    fontSize: isLargeScreen ? "clamp(28px, 2.5vw, 38px)" : "clamp(20px, 2.5vw, 28px)",
                     fontWeight: "700",
                     color: "#333",
-                    margin: "0 0 15px 0",
+                    margin: "0 0 clamp(8px, 1vh, 15px) 0",
                   }}
                 >
                   AQI Across states and Union Territories
                 </h2>
                 {/* Tabs */}
-                <div style={{ display: "flex", gap: "30px" }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: isMobile ? "15px" : isLargeScreen ? "40px" : "30px" }}>
                   {/* Sort Tab */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: isLargeScreen ? "12px" : "8px" }}>
                     <span style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "12px",
+                      fontSize: isLargeScreen ? "14px" : "12px",
                       color: "#666",
                     }}>
                       Sort by:
@@ -5470,8 +5959,8 @@ export default function App() {
                       onChange={(e) => handleSortChange(e.target.value)}
                       style={{
                         fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                        fontSize: "12px",
-                        padding: "4px 8px",
+                        fontSize: isLargeScreen ? "14px" : "12px",
+                        padding: isLargeScreen ? "6px 12px" : "4px 8px",
                         border: "1px solid #ddd",
                         borderRadius: "4px",
                         backgroundColor: "#fff",
@@ -5484,10 +5973,10 @@ export default function App() {
                     </select>
                   </div>
                   {/* View Tab */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: isLargeScreen ? "12px" : "8px" }}>
                     <span style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "12px",
+                      fontSize: isLargeScreen ? "14px" : "12px",
                       color: "#666",
                     }}>
                       View:
@@ -5499,8 +5988,8 @@ export default function App() {
                       }}
                       style={{
                         fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                        fontSize: "12px",
-                        padding: "4px 12px",
+                        fontSize: isLargeScreen ? "14px" : "12px",
+                        padding: isLargeScreen ? "6px 16px" : "4px 12px",
                         border: "1px solid #ddd",
                         borderRadius: "4px 0 0 4px",
                         backgroundColor: viewMode === "overview" ? "#5699af" : "#fff",
@@ -5514,8 +6003,8 @@ export default function App() {
                       onClick={() => handleViewModeChange("scrollable")}
                       style={{
                         fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                        fontSize: "12px",
-                        padding: "4px 12px",
+                        fontSize: isLargeScreen ? "14px" : "12px",
+                        padding: isLargeScreen ? "6px 16px" : "4px 12px",
                         border: "1px solid #ddd",
                         borderLeft: "none",
                         borderRadius: "0 4px 4px 0",
@@ -5530,14 +6019,13 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Right - India map with How to read section */}
-              <div style={{ display: "flex", alignItems: "flex-start", gap: "20px" }}>
-                {/* How to read section */}
-                <div style={{ maxWidth: "520px" }}>
+              {/* Mobile-only How to read section */}
+              {isMobile && (
+                <div style={{ marginTop: "20px", padding: "15px", backgroundColor: "#f9f9f9", borderRadius: "8px" }}>
                   <p
                     style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "12px",
+                      fontSize: "13px",
                       fontWeight: "600",
                       color: "#333",
                       margin: "0 0 10px 0",
@@ -5550,7 +6038,47 @@ export default function App() {
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                       fontSize: "11px",
                       color: "#555",
-                      lineHeight: "1.5",
+                      lineHeight: "1.6",
+                      margin: "0 0 8px 0",
+                    }}
+                  >
+                    Each circular graphic represents a State or Union Territory. Each line marks a single day of 2024. The spikes show air pollution intensity—longer spikes mean worse AQI.
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: "11px",
+                      color: "#555",
+                      lineHeight: "1.6",
+                      margin: "0",
+                    }}
+                  >
+                    Colors: <span style={{ color: "#5699af", fontWeight: "600" }}>Good</span>, <span style={{ color: "#87beb1", fontWeight: "600" }}>Satisfactory</span>, <span style={{ color: "#dfbfc6", fontWeight: "600" }}>Moderate</span>, <span style={{ color: "#de9eaf", fontWeight: "600" }}>Poor</span>, <span style={{ color: "#e07192", fontWeight: "600" }}>Very Poor</span>, <span style={{ color: "#c1616b", fontWeight: "600" }}>Severe</span>, <span style={{ color: "#ccc", fontWeight: "600" }}>No Data</span>. Tap any circle to explore details.
+                  </p>
+                </div>
+              )}
+
+              {/* Right - India map with How to read section - hidden on mobile */}
+              <div style={{ display: isMobile ? "none" : "flex", alignItems: "flex-start", gap: isLargeScreen ? "30px" : "20px" }}>
+                {/* How to read section */}
+                <div style={{ maxWidth: isLargeScreen ? "620px" : "520px" }}>
+                  <p
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: isLargeScreen ? "14px" : "12px",
+                      fontWeight: "600",
+                      color: "#333",
+                      margin: "0 0 10px 0",
+                    }}
+                  >
+                    How to read?
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
+                      fontSize: isLargeScreen ? "13px" : "11px",
+                      color: "#555",
+                      lineHeight: isLargeScreen ? "1.6" : "1.5",
                       margin: "0 0 6px 0",
                     }}
                   >
@@ -5559,9 +6087,9 @@ export default function App() {
                   <p
                     style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "11px",
+                      fontSize: isLargeScreen ? "13px" : "11px",
                       color: "#555",
-                      lineHeight: "1.5",
+                      lineHeight: isLargeScreen ? "1.6" : "1.5",
                       margin: "0 0 6px 0",
                     }}
                   >
@@ -5573,8 +6101,8 @@ export default function App() {
                 <div
                   ref={smallMapRef}
                   style={{
-                    width: "140px",
-                    height: "160px",
+                    width: isLargeScreen ? "180px" : "140px",
+                    height: isLargeScreen ? "200px" : "160px",
                     position: "relative",
                     flexShrink: 0,
                     opacity: mapMorphProgress > 0.5 ? 0 : 1,
@@ -5585,8 +6113,8 @@ export default function App() {
                   ref={indiaMapRef}
                   data="/india-states.svg"
                   type="image/svg+xml"
-                  width="140"
-                  height="160"
+                  width="100%"
+                  height="100%"
                   style={{ pointerEvents: "none" }}
                   onLoad={() => {
                     // Initial styling when SVG loads
@@ -5615,13 +6143,18 @@ export default function App() {
               ref={circularGridRef}
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(8, 1fr)",
-                columnGap: "0px",
-                rowGap: "25px",
+                gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : isTablet ? "repeat(4, 1fr)" : "repeat(8, 1fr)",
+                columnGap: isMobile ? "10px" : "0",
+                rowGap: isMobile ? "10px" : "0",
                 justifyItems: "center",
+                alignItems: "start",
+                alignContent: "start",
                 width: "100%",
+                flex: 1,
+                overflow: "visible",
                 position: "relative",
-                marginTop: "15px",
+                marginTop: "clamp(2px, 0.5vh, 8px)",
+                paddingBottom: "clamp(5px, 0.8vh, 12px)",
                 opacity: isViewTransitioning ? 0 : 1,
                 transition: "opacity 0.25s ease",
               }}
@@ -5638,8 +6171,8 @@ export default function App() {
                       flexDirection: "column",
                       alignItems: "center",
                       width: "100%",
-                      maxWidth: "120px",
                       cursor: "pointer",
+                      marginBottom: isLargeScreen ? "clamp(-30px, -2.5vh, -15px)" : "clamp(-20px, -2vh, -10px)",
                     }}
                     onMouseEnter={(e) => {
                       setHoveredStateIndex(index);
@@ -5656,25 +6189,24 @@ export default function App() {
                   >
                     <div
                       style={{
-                        width: "120px",
-                        height: "120px",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
+                        width: isMobile ? "min(40vw, 140px)" : isLargeScreen ? "min(11vw, 18vh, 280px)" : "min(11.8vw, 22vh, 180px)",
+                        height: isMobile ? "min(40vw, 140px)" : isLargeScreen ? "min(11vw, 18vh, 280px)" : "min(11.8vw, 22vh, 180px)",
+                        minWidth: isMobile ? "100px" : isLargeScreen ? "140px" : "110px",
+                        minHeight: isMobile ? "100px" : isLargeScreen ? "140px" : "110px",
                       }}
                     >
-                      <div style={{ transform: "scale(0.22)", transformOrigin: "center center" }}>
-                        {renderCircularVisualization(stateInfo, true)}
-                      </div>
+                      {renderCircularVisualization(stateInfo, true)}
                     </div>
                     <p
                       style={{
                         fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                        fontSize: "9px",
+                        fontSize: isLargeScreen ? "clamp(10px, 0.9vw, 14px)" : "clamp(8px, 0.8vw, 10px)",
                         color: "#333",
-                        margin: "12px 0 0 0",
+                        margin: isLargeScreen ? "-22px 0 0 0" : "-18px 0 0 0",
+                        padding: "0",
+                        lineHeight: "1",
                         textAlign: "center",
-                        maxWidth: "140px",
+                        width: "100%",
                         whiteSpace: "nowrap",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
@@ -5794,34 +6326,39 @@ export default function App() {
               ref={mainVisualizationRef}
               style={{
                 display: "flex",
-                minHeight: "100vh",
-                padding: "20px 20px 20px 0",
+                flexDirection: isMobile ? "column" : "row",
+                minHeight: isMobile ? "auto" : "100vh",
+                padding: isMobile ? "20px 15px" : "20px 20px 20px 0",
+                overflow: "visible",
                 opacity: isViewTransitioning ? 0 : 1,
                 transition: "opacity 0.25s ease",
               }}
             >
-            {/* Sticky visualization on the left */}
+            {/* Sticky visualization on the left - scales to fit viewport (hidden on mobile - shown inline instead) */}
             <div
               style={{
                 position: "sticky",
-                top: "130px",
-                height: "fit-content",
+                top: isLargeScreen ? "clamp(100px, 12vh, 160px)" : "clamp(120px, 15vh, 180px)",
                 flexShrink: 0,
-                marginLeft: "-50px",
+                marginLeft: isLargeScreen ? "clamp(10px, 2vw, 40px)" : "clamp(5px, 1vw, 20px)",
+                width: isLargeScreen ? "min(50vw, calc(100vh - 120px), 1000px)" : "min(55vw, calc(100vh - 150px), 800px)",
+                height: isLargeScreen ? "min(50vw, calc(100vh - 120px), 1000px)" : "min(55vw, calc(100vh - 150px), 800px)",
+                overflow: "visible",
+                zIndex: 50,
+                display: isMobile ? "none" : "flex",
+                justifyContent: "center",
               }}
             >
-              <div style={{ position: "relative" }}>
-                {stateData.length > 0 && renderCircularVisualization(stateData[activeStateIndex])}
-              </div>
+              {stateData.length > 0 && renderCircularVisualization(stateData[activeStateIndex])}
             </div>
 
-            {/* Scrollable state list on the right */}
+            {/* Scrollable state list on the right (normal flow on mobile) */}
             <div
               style={{
                 flex: 1,
-                marginLeft: "30px",
-                paddingTop: "200px",
-                paddingBottom: "150px",
+                marginLeft: isMobile ? "0" : isLargeScreen ? "50px" : "30px",
+                paddingTop: isMobile ? "20px" : isLargeScreen ? "250px" : "200px",
+                paddingBottom: isMobile ? "40px" : "150px",
                 textAlign: "left",
               }}
             >
@@ -5830,7 +6367,7 @@ export default function App() {
               )}
             </div>
 
-            {/* Custom scroll indicator */}
+            {/* Custom scroll indicator - hide on mobile */}
             <div
               style={{
                 position: "sticky",
@@ -5838,7 +6375,7 @@ export default function App() {
                 height: "fit-content",
                 marginLeft: "20px",
                 marginRight: "10px",
-                display: "flex",
+                display: isMobile ? "none" : "flex",
                 flexDirection: "column",
                 alignItems: "center",
               }}
@@ -5879,34 +6416,34 @@ export default function App() {
               display: "flex",
               justifyContent: "center",
               alignItems: "flex-start",
-              padding: "60px 20px",
-              marginTop: "80px",
+              padding: isLargeScreen ? "80px 30px" : "60px 20px",
+              marginTop: isLargeScreen ? "100px" : "80px",
               background: "#fff",
             }}
           >
             <div
               style={{
-                width: "6px",
-                height: "80px",
+                width: isLargeScreen ? "8px" : "6px",
+                height: isLargeScreen ? "100px" : "80px",
                 backgroundColor: "#5699af",
-                marginRight: "20px",
+                marginRight: isLargeScreen ? "28px" : "20px",
                 flexShrink: 0,
               }}
             />
             <p
               style={{
                 fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                fontSize: "22px",
+                fontSize: isLargeScreen ? "28px" : "22px",
                 fontWeight: "300",
                 color: "#333",
                 textAlign: "left",
-                maxWidth: "800px",
+                maxWidth: isLargeScreen ? "1000px" : "800px",
                 lineHeight: "2.0",
                 margin: 0,
                 marginTop: "-10px",
               }}
             >
-              
+
 Now, let's look beyond AQI levels and explore the major causes driving air pollution across India.
             </p>
           </div>
@@ -5915,26 +6452,29 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
           <div
             style={{
               position: "relative",
-              display: "flex",
+              display: isMobile ? "flex" : "flex",
+              flexDirection: isMobile ? "column" : "row",
               backgroundColor: "#fff",
+              minHeight: isMobile ? "auto" : undefined,
             }}
           >
-            {/* Left - Sticky India Map with Population/Rainfall dots */}
+            {/* Left - Sticky India Map with Population/Rainfall dots (not sticky on mobile) */}
             <div
               style={{
-                width: "55%",
-                position: "sticky",
-                top: 0,
-                height: "100vh",
+                width: isMobile ? "100%" : "55%",
+                position: isMobile ? "relative" : "sticky",
+                top: isMobile ? undefined : 0,
+                height: isMobile ? "auto" : "100vh",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                padding: "20px",
+                padding: isMobile ? "10px" : "20px",
+                marginBottom: isMobile ? "30px" : undefined,
               }}
             >
               {/* Tabs for Population, Climate, Wind, Geography */}
-              <div style={{ display: "flex", gap: "4px", marginBottom: "20px" }}>
+              <div style={{ display: "flex", gap: isLargeScreen ? "8px" : "4px", marginBottom: isLargeScreen ? "28px" : "20px" }}>
                 {[
                   { name: "Population", index: 0, color: "#5699af" },
                   { name: "Climate", index: 1, color: "#5699af" },
@@ -5945,9 +6485,9 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                     key={tab.index}
                     onClick={() => setActiveScatterIndex(tab.index)}
                     style={{
-                      padding: "8px 16px",
+                      padding: isLargeScreen ? "10px 22px" : "8px 16px",
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "13px",
+                      fontSize: isLargeScreen ? "16px" : "13px",
                       fontWeight: activeScatterIndex === tab.index ? "600" : "400",
                       color: activeScatterIndex === tab.index ? "#333" : "#888",
                       backgroundColor: activeScatterIndex === tab.index ? "#fff" : "transparent",
@@ -6031,8 +6571,8 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
               {/* Mapbox Map - shown for all tabs (Population, Climate, Wind, Geography) */}
               <div style={{
                 position: "relative",
-                width: 650,
-                height: 626,
+                width: isLargeScreen ? 850 : 650,
+                height: isLargeScreen ? 820 : 626,
                 borderRadius: "8px",
                 overflow: "hidden",
                 boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
@@ -6047,8 +6587,8 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                 {/* AQI spike circles overlay for Population/Climate tabs */}
                 {activeScatterIndex < 2 && (
                   <svg
-                    width="650"
-                    height="626"
+                    width={isLargeScreen ? 850 : 650}
+                    height={isLargeScreen ? 820 : 626}
                     style={{
                       position: "absolute",
                       top: 0,
@@ -6094,16 +6634,22 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                       const geo = stateGeoCoords[state.state];
                       if (!geo) return null;
 
-                      // Convert geographic coordinates to pixel positions
-                      // Mapbox bounds: [68, 6] to [98, 37] with padding 20
+                      // Convert geographic coordinates to pixel positions using Web Mercator projection
+                      // Mapbox uses Web Mercator, so we need to apply the same projection
                       const padding = 20;
                       const minLon = 68, maxLon = 98;
                       const minLat = 6, maxLat = 37;
-                      const containerWidth = 650, containerHeight = 626;
+                      const containerWidth = isLargeScreen ? 850 : 650, containerHeight = isLargeScreen ? 820 : 626;
+
+                      // Web Mercator projection formula for latitude
+                      const latToMercatorY = (lat) => Math.log(Math.tan((90 + lat) * Math.PI / 360));
+                      const minMercY = latToMercatorY(minLat);
+                      const maxMercY = latToMercatorY(maxLat);
+                      const mercY = latToMercatorY(geo.lat);
 
                       const coord = {
                         x: padding + ((geo.lon - minLon) / (maxLon - minLon)) * (containerWidth - 2 * padding),
-                        y: padding + ((maxLat - geo.lat) / (maxLat - minLat)) * (containerHeight - 2 * padding),
+                        y: padding + ((maxMercY - mercY) / (maxMercY - minMercY)) * (containerHeight - 2 * padding),
                       };
                       if (!coord) return null;
 
@@ -6299,37 +6845,41 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
 {/* Himalayas image removed - Geography section now uses Mapbox zoom */}
             </div>
 
-            {/* Right - Scrollable Text */}
-            <div style={{ flex: "0 0 45%" }}>
+            {/* Right - Scrollable Text (normal flow on mobile) */}
+            <div style={{
+              flex: isMobile ? "none" : "0 0 45%",
+              width: isMobile ? "100%" : undefined,
+              padding: isMobile ? "0 15px" : undefined,
+            }}>
               {/* Population Text + Scatter Plot */}
               <div
                 ref={(el) => (scatterTextRefs.current[0] = el)}
                 style={{
-                  minHeight: "100vh",
-                  padding: "60px 40px",
+                  minHeight: isMobile ? "auto" : "100vh",
+                  padding: isMobile ? "20px 0" : "60px 40px",
                   display: "flex",
                   flexDirection: "column",
-                  justifyContent: "center",
+                  justifyContent: isMobile ? "flex-start" : "center",
                 }}
               >
                 <div
                   style={{
-                    maxWidth: "450px",
-                    padding: "30px",
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                    maxWidth: isMobile ? "100%" : "450px",
+                    padding: isMobile ? "20px" : isLargeScreen ? "40px" : "30px",
+                    backgroundColor: isMobile ? "#fff" : "rgba(255, 255, 255, 0.97)",
                     borderRadius: "8px",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                    borderLeft: "4px solid #5699af",
-                    marginBottom: "30px",
+                    boxShadow: isMobile ? "none" : "0 4px 20px rgba(0,0,0,0.15)",
+                    borderLeft: isLargeScreen ? "5px solid #5699af" : "4px solid #5699af",
+                    marginBottom: isMobile ? "0" : isLargeScreen ? "40px" : "30px",
                   }}
                 >
                   <h3
                     style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "20px",
+                      fontSize: isLargeScreen ? "26px" : "20px",
                       fontWeight: "500",
                       color: "#333",
-                      marginBottom: "20px",
+                      marginBottom: isLargeScreen ? "26px" : "20px",
                       margin: 0,
                     }}
                   >
@@ -6338,11 +6888,11 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                   <p
                     style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "15px",
+                      fontSize: isLargeScreen ? "18px" : "15px",
                       lineHeight: "1.8",
                       color: "#555",
-                      marginTop: "15px",
-                      marginBottom: "15px",
+                      marginTop: isLargeScreen ? "20px" : "15px",
+                      marginBottom: isLargeScreen ? "20px" : "15px",
                     }}
                   >
                     The map reveals a dense concentration of population across the North Indian River Plain spanning Uttar Pradesh, Bihar, and Delhi one of the most crowded regions in the world.   </p>
@@ -6519,28 +7069,28 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
               <div
                 ref={(el) => (scatterTextRefs.current[1] = el)}
                 style={{
-                  minHeight: "100vh",
-                  padding: "60px 40px",
+                  minHeight: isMobile ? "auto" : "100vh",
+                  padding: isMobile ? "20px 0" : "60px 40px",
                   display: "flex",
                   flexDirection: "column",
-                  justifyContent: "center",
+                  justifyContent: isMobile ? "flex-start" : "center",
                 }}
               >
                 <div
                   style={{
-                    maxWidth: "450px",
-                    padding: "30px",
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                    maxWidth: isMobile ? "100%" : isLargeScreen ? "550px" : "450px",
+                    padding: isMobile ? "20px" : isLargeScreen ? "40px" : "30px",
+                    backgroundColor: isMobile ? "#fff" : "rgba(255, 255, 255, 0.97)",
                     borderRadius: "8px",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                    borderLeft: "4px solid #5699af",
-                    marginBottom: "30px",
+                    boxShadow: isMobile ? "none" : "0 4px 20px rgba(0,0,0,0.15)",
+                    borderLeft: isLargeScreen ? "5px solid #5699af" : "4px solid #5699af",
+                    marginBottom: isMobile ? "0" : isLargeScreen ? "40px" : "30px",
                   }}
                 >
                   <h3
                     style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "20px",
+                      fontSize: isLargeScreen ? "26px" : "20px",
                       fontWeight: "500",
                       color: "#333",
                       margin: 0,
@@ -6551,11 +7101,11 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                   <p
                     style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "15px",
+                      fontSize: isLargeScreen ? "18px" : "15px",
                       lineHeight: "1.8",
                       color: "#555",
-                      marginTop: "15px",
-                      marginBottom: "15px",
+                      marginTop: isLargeScreen ? "20px" : "15px",
+                      marginBottom: isLargeScreen ? "20px" : "15px",
                     }}
                   >
                     Air quality in India varies strongly with changes in temperature and rainfall. During the monsoon season (June to September), heavy rains act as a natural cleanser by capturing airborne particles and bringing them down to the ground. This frequent rainfall helps clear the atmosphere and results in some of the cleanest skies of the year. In contrast, winter months (November to February) bring colder temperatures, which increase the use of heating and cooking fires. These emissions add significant particulate matter to the air, worsening pollution levels.
@@ -6713,26 +7263,26 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
               <div
                 ref={(el) => (scatterTextRefs.current[2] = el)}
                 style={{
-                  minHeight: "100vh",
-                  padding: "60px 40px",
+                  minHeight: isMobile ? "auto" : "100vh",
+                  padding: isMobile ? "20px 0" : "60px 40px",
                   display: "flex",
-                  alignItems: "center",
+                  alignItems: isMobile ? "flex-start" : "center",
                 }}
               >
                 <div
                   style={{
-                    maxWidth: "450px",
-                    padding: "30px",
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                    maxWidth: isMobile ? "100%" : isLargeScreen ? "550px" : "450px",
+                    padding: isMobile ? "20px" : isLargeScreen ? "40px" : "30px",
+                    backgroundColor: isMobile ? "#fff" : "rgba(255, 255, 255, 0.97)",
                     borderRadius: "8px",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                    borderLeft: "4px solid #5699af",
+                    boxShadow: isMobile ? "none" : "0 4px 20px rgba(0,0,0,0.15)",
+                    borderLeft: isLargeScreen ? "5px solid #5699af" : "4px solid #5699af",
                   }}
                 >
                   <h3
                     style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "20px",
+                      fontSize: isLargeScreen ? "26px" : "20px",
                       fontWeight: "500",
                       color: "#333",
                       margin: 0,
@@ -6743,11 +7293,11 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                   <p
                     style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "15px",
+                      fontSize: isLargeScreen ? "18px" : "15px",
                       lineHeight: "1.8",
                       color: "#555",
-                      marginTop: "15px",
-                      marginBottom: "15px",
+                      marginTop: isLargeScreen ? "20px" : "15px",
+                      marginBottom: isLargeScreen ? "20px" : "15px",
                     }}
                   >
                     Wind plays a crucial role in dispersing pollutants. When winds are strong, polluted air is carried away and diluted, improving overall air quality.
@@ -6785,26 +7335,26 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
               <div
                 ref={(el) => (scatterTextRefs.current[3] = el)}
                 style={{
-                  minHeight: "100vh",
-                  padding: "60px 40px",
+                  minHeight: isMobile ? "auto" : "100vh",
+                  padding: isMobile ? "20px 0" : "60px 40px",
                   display: "flex",
-                  alignItems: "center",
+                  alignItems: isMobile ? "flex-start" : "center",
                 }}
               >
                 <div
                   style={{
-                    maxWidth: "450px",
-                    padding: "30px",
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                    maxWidth: isMobile ? "100%" : isLargeScreen ? "550px" : "450px",
+                    padding: isMobile ? "20px" : isLargeScreen ? "40px" : "30px",
+                    backgroundColor: isMobile ? "#fff" : "rgba(255, 255, 255, 0.97)",
                     borderRadius: "8px",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                    borderLeft: "4px solid #5699af",
+                    boxShadow: isMobile ? "none" : "0 4px 20px rgba(0,0,0,0.15)",
+                    borderLeft: isLargeScreen ? "5px solid #5699af" : "4px solid #5699af",
                   }}
                 >
                   <h3
                     style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "20px",
+                      fontSize: isLargeScreen ? "26px" : "20px",
                       fontWeight: "500",
                       color: "#333",
                       margin: 0,
@@ -6815,10 +7365,10 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                   <p
                     style={{
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "15px",
+                      fontSize: isLargeScreen ? "18px" : "15px",
                       lineHeight: "1.8",
                       color: "#555",
-                      marginTop: "15px",
+                      marginTop: isLargeScreen ? "20px" : "15px",
                       marginBottom: 0,
                     }}
                   >
@@ -6853,15 +7403,15 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
             </h2>
 
             {/* Monthly AQI Chart */}
-            <div style={{ marginBottom: "50px" }}>
+            <div style={{ marginBottom: isLargeScreen ? "70px" : "50px" }}>
               {/* Title aligned with section heading */}
               <h3
                 style={{
                   fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                  fontSize: "20px",
+                  fontSize: isLargeScreen ? "26px" : "20px",
                   fontWeight: "500",
                   color: "#333",
-                  margin: "0 0 8px 0",
+                  margin: isLargeScreen ? "0 0 12px 0" : "0 0 8px 0",
                 }}
               >
                 Monthly Average AQI by City — 2024
@@ -6869,10 +7419,10 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
               <p
                 style={{
                   fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                  fontSize: "14px",
+                  fontSize: isLargeScreen ? "16px" : "14px",
                   fontWeight: "400",
                   color: "#888",
-                  margin: "0 0 20px 0",
+                  margin: isLargeScreen ? "0 0 28px 0" : "0 0 20px 0",
                 }}
               >
                 Each bar represents a city's monthly average AQI
@@ -6955,31 +7505,40 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
           {/* Pollutants Radial Chart Section - Scrollytelling with Tabs */}
           <div
             style={{
-              height: "560vh",
+              height: isMobile ? "auto" : "620vh",
               position: "relative",
               display: "flex",
+              flexDirection: isMobile ? "column" : "row",
+              justifyContent: "center",
+              maxWidth: isLargeScreen ? "1800px" : "1400px",
+              margin: "0 auto",
+              width: "100%",
+              padding: isMobile ? "0 15px" : undefined,
             }}
           >
-            {/* Left - Sticky Map with Tabs and State Radial Charts */}
+            {/* Left - Sticky Map with Tabs and State Radial Charts (not sticky on mobile) */}
             <div
               style={{
-                width: "55%",
-                position: "sticky",
-                top: 0,
-                height: "100vh",
+                width: isMobile ? "100%" : "55%",
+                maxWidth: isMobile ? "100%" : isLargeScreen ? "900px" : "700px",
+                position: isMobile ? "relative" : "sticky",
+                top: isMobile ? undefined : 0,
+                height: isMobile ? "auto" : "100vh",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                justifyContent: "center",
-                padding: "20px",
+                justifyContent: "flex-start",
+                padding: isMobile ? "20px 0" : isLargeScreen ? "clamp(50px, 7vh, 100px) 30px 30px 30px" : "clamp(40px, 6vh, 80px) 20px 20px 20px",
+                boxSizing: "border-box",
+                marginBottom: isMobile ? "30px" : undefined,
               }}
             >
               {/* Pollutant Tabs */}
               <div
                 style={{
                   display: "flex",
-                  gap: "4px",
-                  marginBottom: "20px",
+                  gap: isLargeScreen ? "8px" : "4px",
+                  marginBottom: isLargeScreen ? "28px" : "20px",
                   flexWrap: "wrap",
                   justifyContent: "center",
                 }}
@@ -6996,9 +7555,9 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                     key={index}
                     onClick={() => setActivePollutantIndex(index)}
                     style={{
-                      padding: "8px 16px",
+                      padding: isLargeScreen ? "10px 22px" : "8px 16px",
                       fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                      fontSize: "13px",
+                      fontSize: isLargeScreen ? "16px" : "13px",
                       fontWeight: activePollutantIndex === index ? "600" : "400",
                       color: activePollutantIndex === index ? "#333" : "#888",
                       backgroundColor: activePollutantIndex === index ? "#fff" : "transparent",
@@ -7013,14 +7572,14 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                 ))}
               </div>
 
-              <svg width="550" height="650" viewBox="0 0 600 700">
+              <svg width="100%" style={{ flex: "1 1 auto", maxWidth: isLargeScreen ? "min(60vw, 750px)" : "min(55vw, 550px)", maxHeight: "calc(100vh - 200px)", minHeight: isLargeScreen ? "450px" : "350px" }} viewBox="0 0 612 696" preserveAspectRatio="xMidYMid meet">
                 {/* India map background (grey) */}
                 <image
                   href="/india-states.svg"
                   x="0"
                   y="0"
-                  width="600"
-                  height="700"
+                  width="612"
+                  height="696"
                   style={{
                     opacity: 0.2,
                     filter: "saturate(0) brightness(2.5) contrast(0.8)",
@@ -7036,8 +7595,8 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                     // Convert lat/lon to SVG coordinates
                     const latMin = 6, latMax = 37;
                     const lonMin = 68, lonMax = 98;
-                    const x = ((stateData.lon - lonMin) / (lonMax - lonMin)) * 600;
-                    const y = ((latMax - stateData.lat) / (latMax - latMin)) * 700;
+                    const x = ((stateData.lon - lonMin) / (lonMax - lonMin)) * 612;
+                    const y = ((latMax - stateData.lat) / (latMax - latMin)) * 696;
 
                     // Calculate chart size based on total readings (min 15, max 35)
                     const maxTotal = Math.max(...statePollutantData.map(s => s.total));
@@ -7082,8 +7641,8 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                           setHoveredRadialState(stateData);
                           const rect = e.currentTarget.ownerSVGElement.getBoundingClientRect();
                           setRadialTooltipPos({
-                            x: rect.left + (x / 600) * rect.width,
-                            y: rect.top + (y / 700) * rect.height,
+                            x: rect.left + (x / 612) * rect.width,
+                            y: rect.top + (y / 696) * rect.height,
                           });
                         }}
                         onMouseLeave={() => setHoveredRadialState(null)}
@@ -7196,13 +7755,14 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
               </p>
             </div>
 
-            {/* Right - Scrolling pollutant descriptions */}
+            {/* Right - Scrolling pollutant descriptions (normal flow on mobile) */}
             <div
               style={{
-                width: "45%",
+                width: isMobile ? "100%" : "45%",
+                maxWidth: isMobile ? "100%" : "700px",
                 display: "flex",
                 flexDirection: "column",
-                paddingBottom: "50vh",
+                paddingBottom: isMobile ? "40px" : "clamp(60vh, 70vh, 80vh)",
               }}
             >
               {[
@@ -7255,18 +7815,18 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                 >
                   <div
                     style={{
-                      maxWidth: "450px",
-                      padding: "30px",
+                      maxWidth: isLargeScreen ? "550px" : "450px",
+                      padding: isLargeScreen ? "40px" : "30px",
                       backgroundColor: "rgba(255, 255, 255, 0.95)",
                       borderRadius: "8px",
                       boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                      borderLeft: `4px solid ${pollutant.color}`,
+                      borderLeft: `${isLargeScreen ? "5px" : "4px"} solid ${pollutant.color}`,
                     }}
                   >
                     <h4
                       style={{
                         fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                        fontSize: "20px",
+                        fontSize: isLargeScreen ? "26px" : "20px",
                         fontWeight: "500",
                         color: "#333",
                         margin: 0,
@@ -7277,10 +7837,10 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                     <p
                       style={{
                         fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                        fontSize: "15px",
+                        fontSize: isLargeScreen ? "18px" : "15px",
                         color: "#555",
                         lineHeight: "1.8",
-                        marginTop: "15px",
+                        marginTop: isLargeScreen ? "20px" : "15px",
                         marginBottom: 0,
                       }}
                     >
@@ -7298,22 +7858,22 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
-              padding: "80px 20px",
+              padding: isLargeScreen ? "100px 30px" : "80px 20px",
               backgroundColor: "#fff",
             }}
           >
             <p
               style={{
                 fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                fontSize: "22px",
+                fontSize: isLargeScreen ? "28px" : "22px",
                 fontWeight: "300",
                 color: "#333",
                 textAlign: "left",
-                maxWidth: "800px",
+                maxWidth: isLargeScreen ? "1000px" : "800px",
                 lineHeight: "2.0",
                 margin: 0,
-                borderLeft: "4px solid #5699af",
-                paddingLeft: "30px",
+                borderLeft: isLargeScreen ? "5px solid #5699af" : "4px solid #5699af",
+                paddingLeft: isLargeScreen ? "40px" : "30px",
               }}
             >
               These pollutants do not rise from a single origin, but from a web of diverse and intertwined sources that collectively shape the air around.
@@ -7326,20 +7886,23 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
             style={{
               position: "relative",
               display: "flex",
+              flexDirection: isMobile ? "column" : "row",
               backgroundColor: "#fff",
+              padding: isMobile ? "0 15px" : undefined,
             }}
           >
-            {/* Left - Sticky Industrial Towers */}
+            {/* Left - Sticky Industrial Towers (not sticky on mobile) */}
             <div
               style={{
-                width: "50%",
-                position: "sticky",
-                top: 0,
-                height: "100vh",
+                width: isMobile ? "100%" : "50%",
+                position: isMobile ? "relative" : "sticky",
+                top: isMobile ? undefined : 0,
+                height: isMobile ? "auto" : "100vh",
                 display: "flex",
-                alignItems: "flex-end",
+                alignItems: isMobile ? "center" : "flex-end",
                 justifyContent: "center",
                 overflow: "hidden",
+                marginBottom: isMobile ? "30px" : undefined,
               }}
             >
               <div style={{ position: "relative", width: "100%", height: "80%" }}>
@@ -7440,14 +8003,14 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
               </div>
             </div>
 
-            {/* Right - Scrolling Source Descriptions */}
+            {/* Right - Scrolling Source Descriptions (normal flow on mobile) */}
             <div
               style={{
-                width: "50%",
+                width: isMobile ? "100%" : "50%",
                 display: "flex",
                 flexDirection: "column",
-                paddingBottom: "80vh",
-                paddingLeft: "100px",
+                paddingBottom: isMobile ? "40px" : "min(80vh, 500px)",
+                paddingLeft: isMobile ? "0" : "clamp(20px, 8vw, 100px)",
               }}
             >
               {pollutionSources.map((source, index) => (
@@ -7455,29 +8018,29 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                   key={index}
                   ref={(el) => (sourceCardRefs.current[index] = el)}
                   style={{
-                    minHeight: "80vh",
-                    padding: "60px 40px",
+                    minHeight: "min(80vh, 500px)",
+                    padding: "clamp(30px, 5vh, 60px) clamp(20px, 3vw, 40px)",
                     display: "flex",
                     alignItems: "center",
                   }}
                 >
                   <div
                     style={{
-                      maxWidth: "450px",
-                      padding: "30px",
+                      maxWidth: isLargeScreen ? "550px" : "450px",
+                      padding: isLargeScreen ? "40px" : "30px",
                       backgroundColor: "#fff",
                       borderRadius: "8px",
                       boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                      borderLeft: "4px solid #5699af",
+                      borderLeft: isLargeScreen ? "5px solid #5699af" : "4px solid #5699af",
                       opacity: visibleSources > index ? 1 : 0.3,
-                      transform: visibleSources > index ? "translateX(0)" : "translateX(20px)",
+                      transform: visibleSources > index ? "translateY(0)" : "translateY(20px)",
                       transition: "all 0.5s ease-out",
                     }}
                   >
                     <h4
                       style={{
                         fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                        fontSize: "20px",
+                        fontSize: isLargeScreen ? "26px" : "20px",
                         fontWeight: "500",
                         color: "#333",
                         margin: 0,
@@ -7488,10 +8051,10 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                     <p
                       style={{
                         fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                        fontSize: "15px",
+                        fontSize: isLargeScreen ? "18px" : "15px",
                         color: "#555",
                         lineHeight: "1.8",
-                        marginTop: "15px",
+                        marginTop: isLargeScreen ? "20px" : "15px",
                         marginBottom: 0,
                       }}
                     >
@@ -7513,26 +8076,26 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
             display: "flex",
             alignItems: "flex-start",
             justifyContent: "center",
-            padding: "120px 40px 40px 40px",
+            padding: "clamp(60px, 12vh, 120px) clamp(20px, 4vw, 40px) 40px clamp(20px, 4vw, 40px)",
             backgroundColor: "#fff",
           }}
         >
           <div
             style={{
-              width: "6px",
-              height: "80px",
+              width: isLargeScreen ? "8px" : "6px",
+              height: isLargeScreen ? "100px" : "80px",
               backgroundColor: "#5699af",
-              marginRight: "20px",
+              marginRight: isLargeScreen ? "28px" : "20px",
               flexShrink: 0,
             }}
           />
           <p
             style={{
-              fontSize: "22px",
+              fontSize: isLargeScreen ? "28px" : "22px",
               fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
               fontWeight: "300",
               lineHeight: "2.0",
-              maxWidth: "800px",
+              maxWidth: isLargeScreen ? "1000px" : "800px",
               textAlign: "left",
               color: "#333",
               margin: 0,
@@ -7548,13 +8111,13 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
       {(
         <div
           style={{
-            padding: "20px 120px 80px 120px",
+            padding: isMobile ? "20px 20px 60px 20px" : isLargeScreen ? "30px 160px 100px 160px" : "20px 120px 80px 120px",
             backgroundColor: "#fff",
           }}
         >
           <div
             style={{
-              maxWidth: "900px",
+              maxWidth: isLargeScreen ? "1100px" : "900px",
               margin: "0 auto",
               fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
               color: "#333",
@@ -7562,9 +8125,9 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
           >
             <h2
               style={{
-                fontSize: "28px",
+                fontSize: isLargeScreen ? "36px" : "28px",
                 fontWeight: "700",
-                marginBottom: "40px",
+                marginBottom: isLargeScreen ? "50px" : "40px",
                 textAlign: "left",
               }}
             >
@@ -7576,15 +8139,18 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
               style={{
                 display: "flex",
                 flexDirection: "row",
+                flexWrap: "wrap",
                 justifyContent: "center",
                 alignItems: "flex-start",
-                gap: "220px",
+                gap: "clamp(40px, 15vw, 220px)",
                 marginBottom: "60px",
               }}
             >
               {/* WHO Standard KPI */}
               <div
                 style={{
+                  flex: "1 1 250px",
+                  minWidth: "250px",
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "flex-start",
@@ -7660,6 +8226,8 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
               {/* National Standard KPI */}
               <div
                 style={{
+                  flex: "1 1 250px",
+                  minWidth: "250px",
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "flex-start",
@@ -7760,16 +8328,16 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
 
       {/* Life Expectancy Gains Visualization */}
       {lifeExpData.length > 0 && (
-        <div style={{ padding: "40px 120px", backgroundColor: "#fff" }}>
-          <div style={{ maxWidth: "900px", margin: "0 auto" }}>
+        <div style={{ padding: isMobile ? "40px 20px" : isLargeScreen ? "60px 160px" : "40px 120px", backgroundColor: "#fff" }}>
+          <div style={{ maxWidth: isLargeScreen ? "1100px" : "900px", margin: "0 auto" }}>
             {/* Title aligned with text above */}
             <h3
               style={{
                 fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                fontSize: "20px",
+                fontSize: isLargeScreen ? "26px" : "20px",
                 fontWeight: "500",
                 color: "#333",
-                margin: "0 0 8px 0",
+                margin: isLargeScreen ? "0 0 12px 0" : "0 0 8px 0",
               }}
             >
               Life Expectancy Gains from Reducing PM2.5 — by State/UT
@@ -7777,18 +8345,18 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
             <p
               style={{
                 fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
-                fontSize: "14px",
+                fontSize: isLargeScreen ? "16px" : "14px",
                 fontWeight: "400",
                 color: "#888",
-                margin: "0 0 20px 0",
+                margin: isLargeScreen ? "0 0 28px 0" : "0 0 20px 0",
               }}
             >
               Potential years of life gained if PM2.5 reduced to target levels
             </p>
           </div>
           {/* Chart centered */}
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <LifeExpectancyPlot data={lifeExpData} />
+          <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+            <LifeExpectancyPlot data={lifeExpData} isMobile={isMobile} />
           </div>
           <div style={{ maxWidth: "900px", margin: "0 auto" }}>
             <p
@@ -7823,14 +8391,14 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
             style={{
               maxWidth: "900px",
               margin: "0 auto",
-              padding: "0 120px",
+              padding: "0 clamp(40px, 8vw, 120px)",
               fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
               color: "#333",
             }}
           >
             <h2
               style={{
-                fontSize: "28px",
+                fontSize: "clamp(22px, 2.5vw, 28px)",
                 fontWeight: "700",
                 marginBottom: "40px",
                 textAlign: "left",
@@ -7854,9 +8422,9 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(2, 1fr)",
-              gap: "25px",
-              padding: "0 40px",
+              gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)",
+              gap: isMobile ? "15px" : "25px",
+              padding: isMobile ? "0 20px" : "0 40px",
               fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
               maxWidth: "900px",
               margin: "60px auto 0 auto",
@@ -7911,7 +8479,7 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                 <h3
                   className="box-title"
                   style={{
-                    fontSize: "20px",
+                    fontSize: isLargeScreen ? "26px" : "20px",
                     fontWeight: "600",
                     color: "#5699af",
                     lineHeight: "1.5",
@@ -7924,7 +8492,7 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                 <p
                   className="hover-text"
                   style={{
-                    fontSize: "13px",
+                    fontSize: isLargeScreen ? "16px" : "13px",
                     fontWeight: "400",
                     lineHeight: "1.6",
                     color: "#fff",
@@ -7962,23 +8530,24 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
       <div
         ref={cyclingRef}
         style={{
-          height: "300vh",
+          height: isMobile ? "auto" : "200vh",
           backgroundColor: "#fff",
           position: "relative",
         }}
       >
         <div
           style={{
-            position: "sticky",
-            top: 0,
-            height: "100vh",
+            position: isMobile ? "relative" : "sticky",
+            top: isMobile ? undefined : 0,
+            minHeight: isMobile ? "auto" : "100vh",
             width: "100%",
             overflow: "hidden",
             display: "flex",
             flexDirection: "column",
             justifyContent: "flex-start",
             alignItems: "center",
-            paddingTop: "80px",
+            paddingTop: "clamp(40px, 6vh, 80px)",
+            paddingBottom: "40px",
           }}
         >
           {/* Title inside sticky container */}
@@ -7991,7 +8560,7 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
               width: "90%",
               textAlign: "left",
               color: "#333",
-              marginBottom: "100px",
+              marginBottom: "clamp(40px, 8vh, 100px)",
             }}
           >
             Infrastructural Changes That Would Help Achieve Better Air Quality
@@ -8001,26 +8570,27 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
           <div
             style={{
               position: "relative",
-              width: "80%",
-              height: "280px",
-              overflow: "hidden",
-              marginBottom: "50px",
+              width: isMobile ? "90%" : "80%",
+              height: isMobile ? "auto" : "clamp(280px, 35vh, 320px)",
+              overflow: isMobile ? "visible" : "hidden",
+              marginBottom: "clamp(20px, 4vh, 50px)",
             }}
           >
             {/* First text - Better Cycling (visible 0-50%) */}
             <div
               style={{
-                position: "absolute",
-                top: 0,
-                left: "25%",
-                width: "50%",
+                position: isMobile ? "relative" : "absolute",
+                top: isMobile ? undefined : 0,
+                left: isMobile ? undefined : "25%",
+                width: isMobile ? "100%" : "50%",
                 maxWidth: "550px",
-                transform: `translateX(${100 - cyclingProgress * 300}%)`,
+                transform: isMobile ? "none" : `translateX(${100 - cyclingProgress * 300}%)`,
+                marginBottom: isMobile ? "30px" : undefined,
               }}
             >
               <h3
                 style={{
-                  fontSize: "20px",
+                  fontSize: isMobile ? "18px" : "20px",
                   fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                   fontWeight: "500",
                   color: "#333",
@@ -8032,7 +8602,7 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
               </h3>
               <p
                 style={{
-                  fontSize: "16px",
+                  fontSize: isMobile ? "14px" : "16px",
                   fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                   fontWeight: "300",
                   lineHeight: "1.8",
@@ -8047,17 +8617,17 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
             {/* Second text - Better Electricity (visible 50-100%) */}
             <div
               style={{
-                position: "absolute",
-                top: 0,
-                left: "25%",
-                width: "50%",
+                position: isMobile ? "relative" : "absolute",
+                top: isMobile ? undefined : 0,
+                left: isMobile ? undefined : "25%",
+                width: isMobile ? "100%" : "50%",
                 maxWidth: "550px",
-                transform: `translateX(${100 - (cyclingProgress - 0.5) * 300}%)`,
+                transform: isMobile ? "none" : `translateX(${100 - (cyclingProgress - 0.5) * 300}%)`,
               }}
             >
               <h3
                 style={{
-                  fontSize: "20px",
+                  fontSize: isMobile ? "18px" : "20px",
                   fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                   fontWeight: "500",
                   color: "#333",
@@ -8069,7 +8639,7 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
               </h3>
               <p
                 style={{
-                  fontSize: "16px",
+                  fontSize: isMobile ? "14px" : "16px",
                   fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
                   fontWeight: "300",
                   lineHeight: "1.8",
@@ -8077,7 +8647,7 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                   textAlign: "left",
                 }}
               >
-                Enhancing electricity infrastructure can play a crucial role in reducing air pollution. Reliable and widespread electricity supply decreases the reliance on diesel generators, which are major sources of harmful emissions. It also reduces the need for traditional cooking fuels, such as wood, coal, or other biomass, which release smoke and particulate matter into the air. Transitioning to cleaner and greener sources of electricity, such as solar, wind, or hydropower, is essential not only for meeting energy needs but also for mitigating environmental pollution and protecting public health.
+                Enhancing electricity infrastructure can significantly reduce air pollution. Reliable electricity reduces dependence on diesel generators and traditional cooking fuels like wood and coal, which produce harmful emissions. Expanding cleaner energy sources such as solar, wind, and hydropower helps meet energy needs while reducing environmental pollution and protecting public health.
               </p>
             </div>
           </div>
@@ -8086,7 +8656,7 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
           <div
             style={{
               position: "relative",
-              height: "300px",
+              height: "clamp(180px, 30vh, 300px)",
               width: "90%",
               maxWidth: "1000px",
             }}
@@ -8140,7 +8710,7 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
             <div
               style={{
                 position: "absolute",
-                bottom: "50px",
+                bottom: "clamp(20px, 8%, 50px)",
                 left: 0,
                 right: 0,
                 height: "2px",
@@ -8155,7 +8725,7 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
               viewBox="0 0 140 150"
               style={{
                 position: "absolute",
-                bottom: "50px",
+                bottom: "clamp(20px, 8%, 50px)",
                 right: `${10 + cyclingProgress * 75}%`,
               }}
             >
@@ -8186,7 +8756,7 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                 viewBox="0 0 80 160"
                 style={{
                   position: "absolute",
-                  bottom: "50px",
+                  bottom: "clamp(20px, 8%, 50px)",
                   right: `${-5 + (cyclingProgress - 0.6) * 75}%`,
                 }}
               >
@@ -8220,7 +8790,7 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                 viewBox="0 0 70 50"
                 style={{
                   position: "absolute",
-                  bottom: "50px",
+                  bottom: "clamp(20px, 8%, 50px)",
                   right: `${-5 + (cyclingProgress - 0.75) * 75}%`,
                 }}
               >
@@ -8248,7 +8818,7 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
                 viewBox="0 0 100 120"
                 style={{
                   position: "absolute",
-                  bottom: "50px",
+                  bottom: "clamp(20px, 8%, 50px)",
                   right: `${-5 + (cyclingProgress - 0.7) * 75}%`,
                 }}
               >
@@ -8287,7 +8857,7 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
               viewBox="0 0 200 250"
               style={{
                 position: "absolute",
-                bottom: "42px",
+                bottom: "calc(clamp(20px, 8%, 50px) - 8px)",
                 left: "5%",
                 transform: "translateX(-50%)",
               }}
@@ -8412,7 +8982,7 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
               viewBox="0 0 50 90"
               style={{
                 position: "absolute",
-                bottom: "50px",
+                bottom: "clamp(20px, 8%, 50px)",
                 left: "20%",
                 transform: "translateX(-50%)",
               }}
@@ -8519,7 +9089,7 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
       {(
         <div
           style={{
-            padding: "80px 120px",
+            padding: isMobile ? "60px 20px" : "80px 120px",
             backgroundColor: "#fff",
           }}
         >
@@ -8554,12 +9124,12 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
             </p>
             <p
               style={{
-                fontSize: "24px",
+                fontSize: isLargeScreen ? "32px" : "24px",
                 fontWeight: "600",
                 lineHeight: "2.0",
                 textAlign: "center",
                 color: "#5699af",
-                marginTop: "120px",
+                marginTop: "clamp(60px, 10vh, 120px)",
               }}
             >
               In a country where billions live and breathe, clean air is not a luxury, it is a basic right and a shared responsibility.
@@ -8574,18 +9144,18 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
           style={{
             backgroundColor: "#1a365d",
             width: "100%",
-            marginTop: "120px",
-            padding: "80px 40px",
+            marginTop: "clamp(60px, 10vh, 120px)",
+            padding: "clamp(40px, 6vh, 80px) clamp(20px, 4vw, 40px)",
             boxSizing: "border-box",
           }}
         >
           <h2
             style={{
-              fontSize: "28px",
+              fontSize: isLargeScreen ? "36px" : "28px",
               fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
               fontWeight: "700",
               color: "#fff",
-              marginBottom: "40px",
+              marginBottom: isLargeScreen ? "50px" : "40px",
               textAlign: "left",
             }}
           >
@@ -8594,7 +9164,7 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
+              gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
               gap: "16px",
               fontFamily: "Avenir, 'Avenir Next', Helvetica, Arial, sans-serif",
             }}
@@ -8653,12 +9223,20 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
       )}
 
       {/* Custom tooltip */}
-      {tooltip && (
+      {tooltip && (() => {
+        // Viewport boundary clamping
+        const tooltipWidth = 200;
+        const tooltipHeight = 150;
+        const padding = 10;
+        const clampedX = Math.min(Math.max(tooltip.x + 8, padding), window.innerWidth - tooltipWidth - padding);
+        const clampedY = Math.min(Math.max(tooltip.y + 8, padding), window.innerHeight - tooltipHeight - padding);
+
+        return (
         <div
           style={{
             position: "fixed",
-            left: tooltip.x + 8,
-            top: tooltip.y + 8,
+            left: clampedX,
+            top: clampedY,
             backgroundColor: "rgba(255, 255, 255, 0.97)",
             padding: "12px 16px",
             borderRadius: "8px",
@@ -8668,6 +9246,7 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
             pointerEvents: "none",
             zIndex: 1000,
             minWidth: "180px",
+            maxWidth: isMobile ? "calc(100vw - 20px)" : "300px",
           }}
         >
           {tooltip.state && (
@@ -8728,7 +9307,8 @@ Now, let's look beyond AQI levels and explore the major causes driving air pollu
             </div>
           )}
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

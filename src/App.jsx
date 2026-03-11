@@ -2212,14 +2212,32 @@ export default function App() {
     existingMarkers.forEach(marker => marker.remove());
 
     // Determine which state to highlight based on view mode
-    const highlightIndex = viewMode === "scrollable" ? activeStateIndex : hoveredStateIndex;
+    // In scrollable mode, use stateData with activeStateIndex
+    // In overview mode, find the state name from stateData by matching the hovered index in sorted order
+    let highlightedStateName = null;
+    if (viewMode === "scrollable") {
+      if (activeStateIndex !== null && stateData[activeStateIndex]) {
+        highlightedStateName = stateData[activeStateIndex].state;
+      }
+    } else {
+      // For overview mode, we need to get the state from the sorted order
+      // Sort stateData the same way as sortedStateData to find the correct state
+      if (hoveredStateIndex !== null && stateData.length > 0) {
+        const sortedData = [...stateData].sort((a, b) => {
+          if (sortOrder === "highToLow") return (b.avgAQI || 0) - (a.avgAQI || 0);
+          if (sortOrder === "lowToHigh") return (a.avgAQI || 0) - (b.avgAQI || 0);
+          return a.state.localeCompare(b.state); // alphabetical default
+        });
+        if (sortedData[hoveredStateIndex]) {
+          highlightedStateName = sortedData[hoveredStateIndex].state;
+        }
+      }
+    }
 
     const paths = svgDoc.querySelectorAll("path");
     paths.forEach((path) => {
       const stateName = path.getAttribute("name");
-      const isHovered = highlightIndex !== null &&
-        stateData[highlightIndex] &&
-        stateData[highlightIndex].state === stateName;
+      const isHovered = highlightedStateName !== null && highlightedStateName === stateName;
 
       path.style.fill = isHovered ? "#5699af" : "#e0e0e0";
       path.style.stroke = isHovered ? "#2d6a7a" : "#999";
@@ -2271,7 +2289,7 @@ export default function App() {
         svgDoc.documentElement.appendChild(innerCircle);
       }
     });
-  }, [hoveredStateIndex, activeStateIndex, viewMode, stateData]);
+  }, [hoveredStateIndex, activeStateIndex, viewMode, stateData, sortOrder]);
 
   // Update combined population + AQI map when data loads
   useEffect(() => {
